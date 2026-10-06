@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# nicogpg
 
-## Getting Started
+Next.js con Prisma 7.10.0, PostgreSQL y Better Auth 1.7.7.
 
-First, run the development server:
+## Desarrollo
+
+1. Copia `.env.example` a `.env` y configura `DATABASE_URL` para tu PostgreSQL.
+2. Genera `BETTER_AUTH_SECRET` con `openssl rand -base64 32` y configura `BETTER_AUTH_URL` (local: `http://localhost:3000`).
+3. Instala las dependencias y aplica la migración inicial:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
+bun run db:deploy
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`bun install` genera Prisma Client. No se versionan el cliente generado ni los secretos.
+La migración inicial crea las tablas de usuarios, sesiones, cuentas y verificaciones.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Autenticación
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `auth.ts`: instancia del servidor con email/contraseña y cookies para Server Actions.
+- `lib/auth-client.ts`: cliente React (`authClient.signUp.email`, `authClient.signIn.email`, `authClient.signOut`, `authClient.useSession`).
+- `app/api/auth/[...all]/route.ts`: endpoints GET y POST de Better Auth.
+- `lib/prisma.ts`: cliente Prisma reutilizado durante hot reload, con el adaptador PostgreSQL.
 
-## Learn More
+El cliente usa el mismo dominio de la aplicación. No hay proveedores OAuth configurados.
 
-To learn more about Next.js, take a look at the following resources:
+## Base de datos
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+La configuración del CLI está en `prisma7.config.ts`, creada por Prisma 7.10.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+bun run db:generate                 # Regenerar el cliente
+bun run db:migrate --name cambio    # Crear/aplicar migraciones en desarrollo
+bun run db:deploy                  # Aplicar migraciones existentes
+bun run db:studio                  # Explorar datos
+```
 
-## Deploy on Vercel
+Antes de compilar o arrancar, configura las variables de entorno. En despliegue,
+aplica las migraciones con `bun run db:deploy` y usa la URL pública en `BETTER_AUTH_URL`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Se mantiene Prisma CLI, Client y adapter-pg en 7.10.0: al inicializar, `prisma@latest`
+apuntaba a 8.0.0-rc.20, mientras Client y adapter-pg seguían en la versión estable 7.10.0.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Referencias: [Prisma adapter](https://better-auth.com/docs/adapters/prisma) y
+[integración Next.js](https://better-auth.com/docs/integrations/next).
