@@ -20,11 +20,13 @@ La migración inicial crea las tablas de usuarios, sesiones, cuentas y verificac
 ## Autenticación
 
 - `auth.ts`: instancia del servidor con email/contraseña y cookies para Server Actions.
-- `lib/auth-client.ts`: cliente React (`authClient.signUp.email`, `authClient.signIn.email`, `authClient.signOut`, `authClient.useSession`).
+- `lib/auth-client.ts`: cliente React (`authClient.signUp.email`, `authClient.signIn.email`, `authClient.signIn.passkey`, `authClient.signOut`, `authClient.useSession`).
 - `app/api/auth/[...all]/route.ts`: endpoints GET y POST de Better Auth.
 - `lib/prisma.ts`: cliente Prisma reutilizado durante hot reload, con el adaptador PostgreSQL.
 
 El cliente usa el mismo dominio de la aplicación. No hay proveedores OAuth configurados.
+Las rutas `/auth/sign-up` y `/auth/sign-in` ofrecen registro e inicio de sesión
+con correo y contraseña; las contraseñas requieren al menos 8 caracteres.
 
 ## Base de datos
 
@@ -45,3 +47,16 @@ apuntaba a 8.0.0-rc.20, mientras Client y adapter-pg seguían en la versión est
 
 Referencias: [Prisma adapter](https://better-auth.com/docs/adapters/prisma) y
 [integración Next.js](https://better-auth.com/docs/integrations/next).
+
+## Passkeys
+
+En `/auth/sign-in` puedes iniciar sesión con una passkey previamente registrada.
+Para registrar la primera, inicia sesión con correo y contraseña y visita
+`/auth/passkeys`. El servidor exige una sesión para registrar credenciales.
+
+Aplica la migración con `bun run db:deploy` antes de usar esta función.
+Configura `BETTER_AUTH_URL` con el origen real de la aplicación: Better Auth deriva
+el RP ID de su hostname. En producción usa HTTPS; para desarrollo se admite
+`http://localhost:3000`. Las passkeys quedan vinculadas al dominio donde se crean.
+
+Integración: [plugin oficial de passkeys](https://better-auth.com/docs/plugins/passkey).
