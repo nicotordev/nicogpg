@@ -18,6 +18,7 @@ import {
   parseArmoredGpgKey,
   type ParsedGpgKey,
 } from "@/lib/gpg-crypto";
+import { encryptStorageData, decryptStorageData } from "@/lib/secure-storage";
 import { cn } from "@/lib/utils";
 import type { PrivateKey } from "openpgp";
 
@@ -46,7 +47,6 @@ export function NetflixGpgSelector({
   const [keys, setKeys] = useState<GpgKeyDto[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Selected Active Profile
   const [selectedKey, setSelectedKey] = useState<GpgKeyDto | null>(null);
@@ -88,16 +88,8 @@ export function NetflixGpgSelector({
   const [isSigning, setIsSigning] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Contacts & Messaging State
-  const [contacts, setContacts] = useState<Contact[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const storedContacts = window.localStorage.getItem("nicogpg.contacts");
-      return storedContacts ? (JSON.parse(storedContacts) as Contact[]) : [];
-    } catch {
-      return [];
-    }
-  });
+  // Contacts & Messaging State (Encrypted at rest)
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
   const [contactName, setContactName] = useState("");
   const [contactKeyText, setContactKeyText] = useState("");
@@ -125,8 +117,35 @@ export function NetflixGpgSelector({
   // Observer sentinel reference for infinite scroll
   const observerTarget = useRef<HTMLDivElement | null>(null);
 
+  // Load encrypted contacts on mount
   useEffect(() => {
-    window.localStorage.setItem("nicogpg.contacts", JSON.stringify(contacts));
+    let isMounted = true;
+    if (typeof window !== "undefined") {
+      const stored = window.localStorage.getItem("nicogpg.contacts");
+      if (stored) {
+        decryptStorageData(stored).then((decrypted) => {
+          if (isMounted && decrypted) {
+            try {
+              setContacts(JSON.parse(decrypted) as Contact[]);
+            } catch {
+              // Ignore corrupted payload
+            }
+          }
+        });
+      }
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Save contacts encrypted with AES-256-GCM
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      encryptStorageData(JSON.stringify(contacts)).then((encrypted) => {
+        window.localStorage.setItem("nicogpg.contacts", encrypted);
+      });
+    }
   }, [contacts]);
 
   useEffect(() => {
@@ -135,7 +154,6 @@ export function NetflixGpgSelector({
       if (isMounted) {
         setKeys(res.keys);
         setNextCursor(res.nextCursor);
-        setIsInitialLoading(false);
         if (pageMode === "profile" || profileKeyId) {
           const profile =
             res.keys.find((key) => key.id === profileKeyId) ??
@@ -775,7 +793,6 @@ export function NetflixGpgSelector({
         ) : (
           <ProfileSelectorGrid
             keys={keys}
-            isInitialLoading={isInitialLoading}
             isLoadingMore={isLoadingMore}
             observerTarget={observerTarget}
             draggingKeyId={draggingKeyId}

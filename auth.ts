@@ -3,7 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
 import { passkey } from "@better-auth/passkey";
-import { emailOTP } from "better-auth/plugins";
+import { emailOTP, magicLink } from "better-auth/plugins";
 import { sendVerificationEmail } from "@/lib/email";
 
 export const auth = betterAuth({
@@ -16,7 +16,7 @@ export const auth = betterAuth({
     ipAddress: {
       disableIpTracking: true,
     },
-    useSecureCookies: false,
+    useSecureCookies: process.env.NODE_ENV === "production",
   },
   emailAndPassword: {
     enabled: true,
@@ -49,6 +49,18 @@ export const auth = betterAuth({
           title: "Código de un solo uso",
           text: "Usa este código para completar tu verificación. Caduca en 5 minutos.",
           otp,
+        });
+      },
+    }),
+    magicLink({
+      sendMagicLink: async ({ email, url }) => {
+        await sendVerificationEmail({
+          email,
+          subject: "Tu enlace de acceso a nicogpg",
+          title: "Enlace de acceso directo",
+          text: "Haz clic en el botón para iniciar sesión en nicogpg sin contraseña. Caduca en 5 minutos.",
+          actionLabel: "Iniciar sesión",
+          actionUrl: url,
         });
       },
     }),

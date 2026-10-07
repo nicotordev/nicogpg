@@ -1,5 +1,17 @@
 import * as openpgp from "openpgp";
 
+// Maximum security OpenPGP defaults:
+// 1. Force AES-256 for all symmetric operations
+// 2. Force SHA-512 for hashing and signature verification
+// 3. Obfuscate OpenPGP armor by removing software version and comment headers
+// 4. Require minimum 2048-bit keys if RSA is used
+openpgp.config.preferredSymmetricAlgorithm = openpgp.enums.symmetric.aes256;
+openpgp.config.preferredHashAlgorithm = openpgp.enums.hash.sha512;
+openpgp.config.aeadProtect = true;
+openpgp.config.showVersion = false;
+openpgp.config.showComment = false;
+openpgp.config.minRSABits = 2048;
+
 export interface ClientGpgEnvelope {
   handle: string;
   keyId: string;
@@ -23,16 +35,15 @@ export interface ParsedGpgKey {
 }
 
 /**
- * Generate a random hex salt of specified byte length.
+ * Generate a cryptographically secure random hex salt with 256-bit entropy (32 bytes).
  */
-function generateSalt(byteLength = 16): string {
+function generateSalt(byteLength = 32): string {
   const array = new Uint8Array(byteLength);
-  if (typeof window !== "undefined" && window.crypto) {
-    window.crypto.getRandomValues(array);
+  if (typeof globalThis !== "undefined" && globalThis.crypto?.getRandomValues) {
+    globalThis.crypto.getRandomValues(array);
   } else {
-    for (let i = 0; i < byteLength; i++) {
-      array[i] = Math.floor(Math.random() * 256);
-    }
+    // Web Crypto API is standard across modern runtimes
+    crypto.getRandomValues(array);
   }
   return Array.from(array)
     .map((b) => b.toString(16).padStart(2, "0"))
