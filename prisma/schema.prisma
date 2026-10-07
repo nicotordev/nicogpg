@@ -24,6 +24,7 @@ model User {
   accounts      Account[]
 
   passkeys Passkey[]
+  gpgKeys  GpgKey[]
 
   @@unique([email])
   @@map("user")
@@ -94,4 +95,44 @@ model Passkey {
   @@index([userId])
   @@index([credentialID])
   @@map("passkey")
+}
+
+model GpgKey {
+  id                  String   @id @default(cuid())
+  handle              String
+  keyId               String   @unique
+  fingerprint         String   @unique
+  keyType             String   @default("Ed25519")
+  avatarColor         String   @default("red")
+  publicKey           String?  @db.Text
+  encryptedPrivateKey String?  @db.Text
+  kdfSalt             String?
+  kdfParams           String?
+  isPrimary           Boolean  @default(false)
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+  @@map("gpg_key")
+}
+
+model ContactBook {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  ciphertext String   @db.Text
+  updatedAt  DateTime @updatedAt
+
+  @@map("contact_book")
+}
+
+model Mailbox {
+  id                   String   @id @default(cuid())
+  recipientFingerprint String
+  ciphertext           String   @db.Text
+  createdAt            DateTime @default(now())
+
+  @@index([recipientFingerprint])
+  @@map("mailbox")
 }

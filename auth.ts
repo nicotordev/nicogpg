@@ -7,14 +7,24 @@ import { emailOTP } from "better-auth/plugins";
 import { sendVerificationEmail } from "@/lib/email";
 
 export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  trustedOrigins: [
+    process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  ],
   database: prismaAdapter(prisma, { provider: "postgresql" }),
+  advanced: {
+    ipAddress: {
+      disableIpTracking: true,
+    },
+    useSecureCookies: false,
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
-    requireEmailVerification: true,
   },
   emailVerification: {
     sendOnSignUp: true,
+    expiresIn: 60 * 60 * 24,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       await sendVerificationEmail({

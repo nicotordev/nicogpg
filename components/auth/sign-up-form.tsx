@@ -104,6 +104,7 @@ export function SignUpForm() {
         name: values.name,
         email: values.email,
         password: values.password,
+        callbackURL: "/auth/email-verified",
       });
 
       if (result.error) {

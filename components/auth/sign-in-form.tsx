@@ -62,6 +62,8 @@ export function SignInForm() {
       if (result.error) {
         form.setError("root", { message: result.error.status === 429
           ? "Demasiados intentos. Espera un momento y vuelve a intentarlo."
+          : result.error.status === 403
+            ? "Tu email aún no está verificado. Revisa tu bandeja de entrada para activar tu cuenta."
           : "No pudimos iniciar sesión. Revisa tu correo y contraseña e inténtalo de nuevo." });
         return;
       }
