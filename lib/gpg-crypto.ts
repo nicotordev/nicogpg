@@ -12,6 +12,28 @@ openpgp.config.showVersion = false;
 openpgp.config.showComment = false;
 openpgp.config.minRSABits = 2048;
 
+const importedKeyConfig = {
+  parseAEADEncryptedV4KeysAsLegacy: true,
+  enableParsingV5Entities: true,
+  allowMissingKeyFlags: true,
+} as const;
+
+const ARMORED_KEY_BLOCK =
+  /-----BEGIN PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----[\s\S]*?-----END PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----/;
+
+/**
+ * GnuPG prints warnings before the armor block. Keep only the block OpenPGP.js can read.
+ */
+export function extractArmoredKeyBlock(raw: string): string {
+  const normalized = raw
+    .replace(/^\uFEFF/, "")
+    .replace(/\u00a0/g, " ")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .trim();
+  return normalized.match(ARMORED_KEY_BLOCK)?.[0]?.trim() ?? normalized;
+}
+
 export interface ClientGpgEnvelope {
   handle: string;
   keyId: string;
@@ -109,15 +131,21 @@ export async function parseArmoredGpgKey(
   let key: openpgp.Key;
   let encryptedPrivateKeyArmored: string | undefined = undefined;
 
-  const cleanText = armoredKey.trim();
+  const cleanText = extractArmoredKeyBlock(armoredKey);
 
   if (cleanText.includes("PRIVATE KEY BLOCK")) {
     isPrivateKey = true;
-    const privKey = await openpgp.readPrivateKey({ armoredKey: cleanText });
+    const privKey = await openpgp.readPrivateKey({
+      armoredKey: cleanText,
+      config: importedKeyConfig,
+    });
     key = privKey;
     encryptedPrivateKeyArmored = cleanText;
   } else {
-    key = await openpgp.readKey({ armoredKey: cleanText });
+    key = await openpgp.readKey({
+      armoredKey: cleanText,
+      config: importedKeyConfig,
+    });
   }
 
   const fingerprint = key.getFingerprint().toUpperCase();
@@ -181,7 +209,8 @@ export async function unlockPrivateKeyInMemory({
   passphrase: string;
 }): Promise<openpgp.PrivateKey> {
   const privateKey = await openpgp.readPrivateKey({
-    armoredKey: encryptedPrivateKeyArmored,
+    armoredKey: extractArmoredKeyBlock(encryptedPrivateKeyArmored),
+    config: importedKeyConfig,
   });
   return await openpgp.decryptKey({
     privateKey,
@@ -216,7 +245,10 @@ export async function encryptMessageForRecipient({
   publicKeyArmored: string;
   messageText: string;
 }): Promise<string> {
-  const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
+  const publicKey = await openpgp.readKey({
+    armoredKey: extractArmoredKeyBlock(publicKeyArmored),
+    config: importedKeyConfig,
+  });
   try {
     await publicKey.getEncryptionKey();
   } catch {

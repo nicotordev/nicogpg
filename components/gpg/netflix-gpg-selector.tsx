@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import {
   getGpgKeysAction,
+  getGpgKeyByIdAction,
   deleteGpgKeyAction,
   type GpgKeyDto,
   createGpgKeyAction,
@@ -150,24 +151,23 @@ export function NetflixGpgSelector({
 
   useEffect(() => {
     let isMounted = true;
-    getGpgKeysAction({ cursor: undefined, limit: 8 }).then((res) => {
-      if (isMounted) {
-        setKeys(res.keys);
-        setNextCursor(res.nextCursor);
-        if (pageMode === "profile" || profileKeyId) {
-          const profile =
-            res.keys.find((key) => key.id === profileKeyId) ??
-            (pageMode === "profile" ? res.keys[0] : undefined);
-          if (profile) {
-            setUnlockedPrivateKey(null);
-            setUnlockError(null);
-            setUnlockPassphraseInput("");
-            setSignedOutput("");
-            setSelectedKey(profile);
-            setShowMessenger(pageMode !== "profile");
-          }
-        }
-      }
+    getGpgKeysAction({ cursor: undefined, limit: 8 }).then(async (res) => {
+      if (!isMounted) return;
+      setKeys(res.keys);
+      setNextCursor(res.nextCursor);
+
+      const listed =
+        res.keys.find((key) => key.id === profileKeyId) ??
+        (pageMode === "profile" && !profileKeyId ? res.keys[0] : undefined);
+      const profile = listed ?? (profileKeyId ? await getGpgKeyByIdAction(profileKeyId) : null);
+      if (!isMounted || !profile) return;
+
+      setUnlockedPrivateKey(null);
+      setUnlockError(null);
+      setUnlockPassphraseInput("");
+      setSignedOutput("");
+      setSelectedKey(profile);
+      setShowMessenger(pageMode !== "profile");
     });
     return () => {
       isMounted = false;
@@ -220,10 +220,9 @@ export function NetflixGpgSelector({
         const parsed = await parseArmoredGpgKey(cleanText);
         setParsedKeyInfo(parsed);
         if (parsed.handle) setNewHandle(parsed.handle);
-      } catch {
-        setParseError(
-          "Could not parse OpenPGP key format. Please verify the armored block.",
-        );
+      } catch (error: unknown) {
+        console.error("OpenPGP parse error:", error);
+        setParseError("No se pudo leer la clave OpenPGP. Revisa el bloque exportado.");
         setParsedKeyInfo(null);
       } finally {
         setIsParsingKey(false);
@@ -298,8 +297,9 @@ export function NetflixGpgSelector({
         const parsed = await parseArmoredGpgKey(text);
         setParsedKeyInfo(parsed);
         if (parsed.handle) setNewHandle(parsed.handle);
-      } catch {
-        setParseError("Invalid OpenPGP key format.");
+      } catch (error: unknown) {
+        console.error("OpenPGP parse error:", error);
+        setParseError("No se pudo leer la clave OpenPGP. Revisa el bloque exportado.");
         setParsedKeyInfo(null);
       } finally {
         setIsParsingKey(false);
@@ -307,6 +307,27 @@ export function NetflixGpgSelector({
     } else {
       setParsedKeyInfo(null);
     }
+  }
+
+  function completeKeySave(key: GpgKeyDto) {
+    setKeys((prev) => [key, ...prev.filter((item) => item.id !== key.id)]);
+    setUnlockedPrivateKey(null);
+    setUnlockError(null);
+    setUnlockPassphraseInput("");
+    setSignedOutput("");
+    setSelectedKey(key);
+    setShowMessenger(pageMode !== "profile");
+    setIsAddModalOpen(false);
+    setNewHandle("");
+    setNewPassphrase("");
+    setArmoredInputText("");
+    setParsedKeyInfo(null);
+    setImportPassphrase("");
+    setShowImportPassphrase(false);
+    setParseError(null);
+    const targetUrl =
+      pageMode === "profile" ? `/profile?key=${key.id}` : `/?key=${key.id}`;
+    router.push(targetUrl);
   }
 
   // Client-Side Zero-Knowledge Key Generation / Import
@@ -343,12 +364,10 @@ export function NetflixGpgSelector({
         formData.set("kdfParams", envelope.kdfParams);
         const res = await createGpgKeyAction(formData);
 
-        if (res.ok && res.key) {
-          setKeys((prev) => [res.key!, ...prev]);
-          setSelectedKey(res.key!);
-          setIsAddModalOpen(false);
-          setNewHandle("");
-          setNewPassphrase("");
+        if (res.ok) {
+          completeKeySave(res.key);
+        } else {
+          setUiError(res.error);
         }
       } else {
         if (!parsedKeyInfo) return;
@@ -390,19 +409,15 @@ export function NetflixGpgSelector({
         formData.set("kdfParams", parsedKeyInfo.kdfParams);
         const res = await createGpgKeyAction(formData);
 
-        if (res.ok && res.key) {
-          setKeys((prev) => [res.key!, ...prev]);
-          setSelectedKey(res.key!);
-          setIsAddModalOpen(false);
-          setArmoredInputText("");
-          setParsedKeyInfo(null);
-          setNewHandle("");
-          setImportPassphrase("");
-          setShowImportPassphrase(false);
+        if (res.ok) {
+          completeKeySave(res.key);
+        } else {
+          setParseError(res.error);
         }
       }
     } catch (err: unknown) {
       console.error("Key operation error:", err);
+      setUiError("No se pudo guardar la clave");
     } finally {
       setIsCreatingKey(false);
       setCreationStatusText("");
@@ -542,11 +557,8 @@ export function NetflixGpgSelector({
       setContactKeyText("");
       setIsContactDialogOpen(false);
     } catch (error: unknown) {
-      setContactError(
-        error instanceof Error
-          ? error.message
-          : "La clave pública no es válida.",
-      );
+      console.error("Contact key parse error:", error);
+      setContactError("La clave pública no es válida.");
     }
   }
 
@@ -563,11 +575,8 @@ export function NetflixGpgSelector({
       });
       setEncryptedMessage(encrypted);
     } catch (error: unknown) {
-      setContactError(
-        error instanceof Error
-          ? error.message
-          : "No se pudo cifrar el mensaje con la clave del contacto.",
-      );
+      console.error("Encrypt message error:", error);
+      setContactError("No se pudo cifrar el mensaje con la clave del contacto.");
     } finally {
       setIsEncryptingMessage(false);
     }

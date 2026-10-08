@@ -4,6 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "./auth.actions";
 import { revalidatePath } from "next/cache";
 
+function isUniqueConstraint(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code: unknown }).code === "P2002"
+  );
+}
+
 export interface GpgKeyDto {
   id: string;
   handle: string;
@@ -19,18 +28,51 @@ export interface GpgKeyDto {
   createdAt: Date | string;
 }
 
+type StoredGpgKey = {
+  id: string;
+  handle: string;
+  keyId: string;
+  fingerprint: string;
+  keyType: string;
+  avatarColor: string;
+  publicKey: string | null;
+  encryptedPrivateKey: string | null;
+  kdfSalt: string | null;
+  kdfParams: string | null;
+  isPrimary: boolean;
+  createdAt: Date;
+};
+
+function toGpgKeyDto(key: StoredGpgKey): GpgKeyDto {
+  return {
+    id: key.id,
+    handle: key.handle,
+    keyId: key.keyId,
+    fingerprint: key.fingerprint,
+    keyType: key.keyType,
+    avatarColor: key.avatarColor,
+    publicKey: key.publicKey,
+    encryptedPrivateKey: key.encryptedPrivateKey,
+    kdfSalt: key.kdfSalt,
+    kdfParams: key.kdfParams,
+    isPrimary: key.isPrimary,
+    createdAt: key.createdAt.toISOString(),
+  };
+}
+
 export async function createGpgKeyAction(
   formData: FormData,
-): Promise<{ ok: boolean; key?: GpgKeyDto; error?: string }> {
+): Promise<{ ok: true; key: GpgKeyDto } | { ok: false; error: string }> {
   const session = await getSession();
   if (!session?.user?.id) {
     return { ok: false, error: "No autenticado" };
   }
 
+  const fingerprint = String(formData.get("fingerprint") ?? "");
+
   try {
     const handle = String(formData.get("handle") ?? "").trim();
     const keyId = String(formData.get("keyId") ?? "");
-    const fingerprint = String(formData.get("fingerprint") ?? "");
     const keyType = String(formData.get("keyType") ?? "Ed25519");
     const avatarColor = String(formData.get("avatarColor") ?? "red");
     const publicKey = String(formData.get("publicKey") ?? "");
@@ -40,6 +82,13 @@ export async function createGpgKeyAction(
 
     if (!handle || !keyId || !fingerprint || !publicKey || !encryptedPrivateKeyArmored || !salt) {
       return { ok: false, error: "Datos de clave incompletos" };
+    }
+
+    const alreadySaved = await prisma.gpgKey.findFirst({
+      where: { userId: session.user.id, fingerprint },
+    });
+    if (alreadySaved) {
+      return { ok: true, key: toGpgKeyDto(alreadySaved) };
     }
 
     const existingCount = await prisma.gpgKey.count({
@@ -61,12 +110,27 @@ export async function createGpgKeyAction(
       },
     });
 
-    revalidatePath("/");
-    return { ok: true, key };
+    return { ok: true, key: toGpgKeyDto(key) };
   } catch (error) {
     console.error("[gpg.actions] createGpgKeyAction error:", error);
+    if (isUniqueConstraint(error)) {
+      const saved = await prisma.gpgKey.findFirst({
+        where: { userId: session.user.id, fingerprint },
+      });
+      if (saved) return { ok: true, key: toGpgKeyDto(saved) };
+    }
     return { ok: false, error: "No se pudo guardar la clave" };
   }
+}
+
+export async function getGpgKeyByIdAction(id: string): Promise<GpgKeyDto | null> {
+  const session = await getSession();
+  if (!session?.user?.id || !id) return null;
+
+  const key = await prisma.gpgKey.findFirst({
+    where: { id, userId: session.user.id },
+  });
+  return key ? toGpgKeyDto(key) : null;
 }
 
 /**
@@ -134,9 +198,8 @@ export async function deleteGpgKeyAction(
     revalidatePath("/");
     return { success: true };
   } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : "Failed to delete GPG key.";
-    return { success: false, error: message };
+    console.error("[gpg.actions] deleteGpgKeyAction error:", error);
+    return { success: false, error: "No se pudo eliminar el perfil." };
   }
 }
 

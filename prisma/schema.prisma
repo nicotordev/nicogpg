@@ -100,8 +100,8 @@ model Passkey {
 model GpgKey {
   id                  String   @id @default(cuid())
   handle              String
-  keyId               String   @unique
-  fingerprint         String   @unique
+  keyId               String
+  fingerprint         String
   keyType             String   @default("Ed25519")
   avatarColor         String   @default("red")
   publicKey           String?  @db.Text
@@ -114,7 +114,9 @@ model GpgKey {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
+  @@unique([userId, fingerprint])
   @@index([userId])
+  @@index([keyId])
   @@map("gpg_key")
 }
 
