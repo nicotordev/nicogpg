@@ -17,11 +17,21 @@ export interface NetflixGpgSelectorProps {
   profileKeyId?: string;
 }
 
+export type ContactKind = "keyed" | "local" | "self";
+
 export interface Contact {
   id: string;
   name: string;
   fingerprint: string;
   publicKey: string;
+  kind?: ContactKind;
+}
+
+export function contactKind(contact: Contact): ContactKind {
+  if (contact.kind === "self" || contact.kind === "local" || contact.kind === "keyed") {
+    return contact.kind;
+  }
+  return contact.publicKey.trim() ? "keyed" : "local";
 }
 
 export type DeleteRequest =

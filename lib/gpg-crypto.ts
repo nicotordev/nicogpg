@@ -264,3 +264,24 @@ export async function encryptMessageForRecipient({
     format: "armored",
   });
 }
+
+/**
+ * Decrypts an armored message with a private key that is already unlocked in memory.
+ */
+export async function decryptMessageInMemory({
+  unlockedPrivateKey,
+  armoredMessage,
+}: {
+  unlockedPrivateKey: openpgp.PrivateKey;
+  armoredMessage: string;
+}): Promise<string> {
+  const message = await openpgp.readMessage({ armoredMessage });
+  const { data } = await openpgp.decrypt({
+    message,
+    decryptionKeys: unlockedPrivateKey,
+  });
+  if (typeof data !== "string") {
+    throw new Error("El mensaje descifrado no es texto.");
+  }
+  return data;
+}

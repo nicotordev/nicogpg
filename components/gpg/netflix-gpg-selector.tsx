@@ -17,6 +17,7 @@ import {
   signMessageInMemory,
   encryptMessageForRecipient,
   parseArmoredGpgKey,
+  decryptMessageInMemory,
   type ParsedGpgKey,
 } from "@/lib/gpg-crypto";
 import { encryptStorageData, decryptStorageData } from "@/lib/secure-storage";
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
 import type { PrivateKey } from "openpgp";
 
 import type { NetflixGpgSelectorProps, Contact, DeleteRequest } from "./types";
+import { contactKind } from "./types";
 import { FileDropOverlay } from "./file-drop-overlay";
 import { GpgHeader } from "./gpg-header";
 import { BottomNav } from "./bottom-nav";
@@ -34,6 +36,7 @@ import { EditKeyDialog } from "./dialogs/edit-key-dialog";
 import { DeleteConfirmDialog } from "./dialogs/delete-confirm-dialog";
 import { AddContactSheet } from "./dialogs/add-contact-sheet";
 import { UiErrorDialog } from "./dialogs/ui-error-dialog";
+import { DecryptPassphraseDialog } from "./dialogs/decrypt-passphrase-dialog";
 
 export function NetflixGpgSelector({
   initialSession,
@@ -98,6 +101,17 @@ export function NetflixGpgSelector({
   const [selectedContactId, setSelectedContactId] = useState("");
   const [messageToContact, setMessageToContact] = useState("");
   const [encryptedMessage, setEncryptedMessage] = useState("");
+  const [sentPlaintext, setSentPlaintext] = useState("");
+  const [showingDecrypted, setShowingDecrypted] = useState(false);
+  const [decryptDialogOpen, setDecryptDialogOpen] = useState(false);
+  const [decryptPassphrase, setDecryptPassphrase] = useState("");
+  const [decryptDialogError, setDecryptDialogError] = useState<string | null>(
+    null,
+  );
+  const [pendingDecryptArmored, setPendingDecryptArmored] = useState<
+    string | null
+  >(null);
+  const [isDecrypting, setIsDecrypting] = useState(false);
   const [isEncryptingMessage, setIsEncryptingMessage] = useState(false);
   const [showMessenger, setShowMessenger] = useState(pageMode !== "profile");
 
@@ -509,6 +523,8 @@ export function NetflixGpgSelector({
         setSelectedContactId("");
         setMessageToContact("");
         setEncryptedMessage("");
+        setSentPlaintext("");
+        setShowingDecrypted(false);
       }
     }
     setDeleteRequest(null);
@@ -527,39 +543,128 @@ export function NetflixGpgSelector({
     setTimeout(() => setCopiedId(null), 2000);
   }
 
-  async function handleAddContact(event: React.FormEvent) {
+  function rememberContact(contact: Contact) {
+    setContacts((current) => [contact, ...current]);
+    setSelectedContactId(contact.id);
+    setContactName("");
+    setContactKeyText("");
+    setContactError(null);
+    setMessageToContact("");
+    setEncryptedMessage("");
+    setSentPlaintext("");
+    setShowingDecrypted(false);
+    setIsContactDialogOpen(false);
+  }
+
+  function handleCreateSelfChat() {
+    if (!selectedKey?.publicKey) {
+      setContactError("Este perfil no tiene una clave pública.");
+      setIsContactDialogOpen(true);
+      return;
+    }
+
+    const existing = contacts.find(
+      (contact) =>
+        contactKind(contact) === "self" &&
+        contact.fingerprint === selectedKey.fingerprint,
+    );
+    if (existing) {
+      setSelectedContactId(existing.id);
+      setContactError(null);
+      setIsContactDialogOpen(false);
+      return;
+    }
+
+    rememberContact({
+      id: crypto.randomUUID(),
+      name: `Yo · ${selectedKey.handle}`,
+      kind: "self",
+      fingerprint: selectedKey.fingerprint,
+      publicKey: selectedKey.publicKey,
+    });
+  }
+
+  async function handleAddContact(
+    event: React.FormEvent,
+    mode: "local" | "keyed",
+  ) {
     event.preventDefault();
     setContactError(null);
 
-    if (!contactName.trim() || !contactKeyText.trim()) {
-      setContactError("Ingresa un nombre y una clave pública.");
+    const name = contactName.trim();
+    if (!name) {
+      setContactError("Ingresa un nombre.");
+      return;
+    }
+
+    if (mode === "local") {
+      rememberContact({
+        id: crypto.randomUUID(),
+        name,
+        kind: "local",
+        fingerprint: "",
+        publicKey: "",
+      });
+      return;
+    }
+
+    const keyText = contactKeyText.trim();
+    if (!keyText) {
+      setContactError("Pega la clave pública o crea el chat sin clave.");
+      return;
+    }
+    if (keyText.includes("BEGIN PGP MESSAGE")) {
+      setContactError(
+        "Eso es un mensaje cifrado, no una clave. Usa “Sin clave” o “Chatear conmigo”.",
+      );
+      return;
+    }
+    if (keyText.includes("BEGIN PGP PRIVATE KEY BLOCK")) {
+      setContactError("Esa es una clave privada. Pega solo la clave pública.");
+      return;
+    }
+    if (!keyText.includes("BEGIN PGP PUBLIC KEY BLOCK")) {
+      setContactError(
+        "Pega un bloque que empiece con -----BEGIN PGP PUBLIC KEY BLOCK-----.",
+      );
       return;
     }
 
     try {
-      const parsed = await parseArmoredGpgKey(contactKeyText);
+      const parsed = await parseArmoredGpgKey(keyText);
       if (parsed.isPrivateKey) {
-        setContactError(
-          "Por seguridad, agrega solo la clave pública del contacto.",
-        );
+        setContactError("Esa es una clave privada. Pega solo la clave pública.");
         return;
       }
 
-      const contact: Contact = {
+      rememberContact({
         id: crypto.randomUUID(),
-        name: contactName.trim(),
+        name,
+        kind: "keyed",
         fingerprint: parsed.fingerprint,
         publicKey: parsed.publicKeyArmored,
-      };
-      setContacts((current) => [...current, contact]);
-      setSelectedContactId(contact.id);
-      setContactName("");
-      setContactKeyText("");
-      setIsContactDialogOpen(false);
+      });
     } catch (error: unknown) {
       console.error("Contact key parse error:", error);
       setContactError("La clave pública no es válida.");
     }
+  }
+
+  function selectContact(contactId: string) {
+    setSelectedContactId(contactId);
+    setMessageToContact("");
+    setEncryptedMessage("");
+    setSentPlaintext("");
+    setShowingDecrypted(false);
+    setContactError(null);
+  }
+
+  function armoredPgpMessage(text: string): string | null {
+    return (
+      text.match(
+        /-----BEGIN PGP MESSAGE-----[\s\S]*?-----END PGP MESSAGE-----/,
+      )?.[0] ?? null
+    );
   }
 
   async function handleEncryptMessage() {
@@ -567,18 +672,112 @@ export function NetflixGpgSelector({
     if (!contact || !messageToContact.trim() || isEncryptingMessage) return;
 
     setIsEncryptingMessage(true);
+    setContactError(null);
+    const plaintext = messageToContact.trim();
+
+    if (/^\/descifrar\b/i.test(plaintext)) {
+      const armored =
+        armoredPgpMessage(plaintext) ??
+        (encryptedMessage.includes("BEGIN PGP MESSAGE") ? encryptedMessage : null);
+      setMessageToContact("");
+      if (!armored) {
+        setContactError("Pega el mensaje cifrado después de /descifrar.");
+        setIsEncryptingMessage(false);
+        return;
+      }
+      if (!selectedKey?.encryptedPrivateKey) {
+        setContactError("Este perfil no tiene una clave privada.");
+        setIsEncryptingMessage(false);
+        return;
+      }
+      setPendingDecryptArmored(armored);
+      setDecryptPassphrase("");
+      setDecryptDialogError(null);
+      setDecryptDialogOpen(true);
+      setIsEncryptingMessage(false);
+      return;
+    }
+
     setEncryptedMessage("");
+    setSentPlaintext("");
+    setShowingDecrypted(false);
+
     try {
+      if (contactKind(contact) === "local") {
+        setSentPlaintext(plaintext);
+        setMessageToContact("");
+        return;
+      }
+
+      const publicKeyArmored =
+        contact.publicKey ||
+        (contactKind(contact) === "self" ? selectedKey?.publicKey ?? "" : "");
+      if (!publicKeyArmored) {
+        setContactError("Este chat no tiene una clave para cifrar.");
+        return;
+      }
+
       const encrypted = await encryptMessageForRecipient({
-        publicKeyArmored: contact.publicKey,
-        messageText: messageToContact,
+        publicKeyArmored,
+        messageText: plaintext,
       });
       setEncryptedMessage(encrypted);
+      setMessageToContact("");
     } catch (error: unknown) {
       console.error("Encrypt message error:", error);
-      setContactError("No se pudo cifrar el mensaje con la clave del contacto.");
+      setContactError("No se pudo cifrar el mensaje.");
     } finally {
       setIsEncryptingMessage(false);
+    }
+  }
+
+  function closeDecryptDialog() {
+    if (isDecrypting) return;
+    setDecryptDialogOpen(false);
+    setDecryptPassphrase("");
+    setDecryptDialogError(null);
+    setPendingDecryptArmored(null);
+  }
+
+  async function handleDecryptPassphrase(event: React.FormEvent) {
+    event.preventDefault();
+    if (
+      !selectedKey?.encryptedPrivateKey ||
+      !pendingDecryptArmored ||
+      !decryptPassphrase ||
+      isDecrypting
+    ) {
+      return;
+    }
+
+    setIsDecrypting(true);
+    setDecryptDialogError(null);
+    try {
+      const unlocked = await unlockPrivateKeyInMemory({
+        encryptedPrivateKeyArmored: selectedKey.encryptedPrivateKey,
+        passphrase: decryptPassphrase,
+      });
+      setUnlockedPrivateKey(unlocked);
+      try {
+        const readable = await decryptMessageInMemory({
+          unlockedPrivateKey: unlocked,
+          armoredMessage: pendingDecryptArmored,
+        });
+        setSentPlaintext(readable);
+        setEncryptedMessage("");
+        setShowingDecrypted(true);
+        setDecryptPassphrase("");
+        setPendingDecryptArmored(null);
+        setDecryptDialogOpen(false);
+      } catch (error: unknown) {
+        console.error("Decrypt command error:", error);
+        setDecryptDialogError("No se pudo descifrar el mensaje con esta clave.");
+      }
+    } catch (error: unknown) {
+      console.error("Unlock for decrypt error:", error);
+      setDecryptDialogError("La passphrase no coincide con la clave privada.");
+    } finally {
+      setIsDecrypting(false);
     }
   }
 
@@ -780,13 +979,16 @@ export function NetflixGpgSelector({
             selectedContactId={selectedContactId}
             messageToContact={messageToContact}
             encryptedMessage={encryptedMessage}
+            sentPlaintext={sentPlaintext}
+            showingDecrypted={showingDecrypted}
             isEncryptingMessage={isEncryptingMessage}
             contactError={contactError}
             showMessenger={showMessenger}
             onBackToProfiles={handleBackToProfiles}
             onDeleteProfile={(e) => handleDeleteKey(selectedKey.id, e)}
             onCopyText={copyText}
-            onSelectContact={setSelectedContactId}
+            onSelectContact={selectContact}
+            onCreateSelfChat={handleCreateSelfChat}
             onDeleteContact={handleDeleteContact}
             onOpenAddContactDialog={() => {
               setContactError(null);
@@ -907,6 +1109,21 @@ export function NetflixGpgSelector({
       {/* UI Error Alert Dialog */}
       <UiErrorDialog uiError={uiError} onDismiss={() => setUiError(null)} />
 
+      <DecryptPassphraseDialog
+        open={decryptDialogOpen}
+        passphrase={decryptPassphrase}
+        error={decryptDialogError}
+        isDecrypting={isDecrypting}
+        onOpenChange={(open) => {
+          if (!open) closeDecryptDialog();
+        }}
+        onPassphraseChange={(value) => {
+          setDecryptPassphrase(value);
+          if (decryptDialogError) setDecryptDialogError(null);
+        }}
+        onSubmit={handleDecryptPassphrase}
+      />
+
       {/* Add Contact Sheet */}
       <AddContactSheet
         isOpen={isContactDialogOpen}
@@ -920,6 +1137,7 @@ export function NetflixGpgSelector({
         onContactKeyTextChange={setContactKeyText}
         contactError={contactError}
         onSubmit={handleAddContact}
+        onCreateSelfChat={handleCreateSelfChat}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 import {
   MessageCircle,
   UserPlus,
+  UserRound,
   Trash2,
   MoreVertical,
   LoaderCircle,
@@ -9,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import type { Contact } from "../types";
+import { contactKind, type Contact } from "../types";
 import { cn } from "@/lib/utils";
 
 interface MessengerCardProps {
@@ -17,6 +18,8 @@ interface MessengerCardProps {
   selectedContactId: string;
   messageToContact: string;
   encryptedMessage: string;
+  sentPlaintext: string;
+  showingDecrypted: boolean;
   isEncryptingMessage: boolean;
   contactError: string | null;
   copiedId: string | null;
@@ -24,6 +27,7 @@ interface MessengerCardProps {
   onSelectContact: (contactId: string) => void;
   onDeleteContact: (contactId: string) => void;
   onOpenAddContactDialog: () => void;
+  onCreateSelfChat: () => void;
   onMessageChange: (value: string) => void;
   onEncryptMessage: () => void;
   onCopyText: (text: string, id: string) => void;
@@ -34,6 +38,8 @@ export function MessengerCard({
   selectedContactId,
   messageToContact,
   encryptedMessage,
+  sentPlaintext,
+  showingDecrypted,
   isEncryptingMessage,
   contactError,
   copiedId,
@@ -41,6 +47,7 @@ export function MessengerCard({
   onSelectContact,
   onDeleteContact,
   onOpenAddContactDialog,
+  onCreateSelfChat,
   onMessageChange,
   onEncryptMessage,
   onCopyText,
@@ -48,6 +55,15 @@ export function MessengerCard({
   const selectedContact = contacts.find(
     (contact) => contact.id === selectedContactId,
   );
+  const selectedKind = selectedContact ? contactKind(selectedContact) : null;
+  const statusLabel =
+    selectedKind === "self"
+      ? "Cifrado con tu clave"
+      : selectedKind === "local"
+        ? "Nota en este navegador"
+        : selectedKind === "keyed"
+          ? "Encrypted with OpenPGP"
+          : "Choose a contact to begin";
 
   return (
     <div className="px-4">
@@ -76,18 +92,28 @@ export function MessengerCard({
                   Your secure inbox
                 </h3>
                 <p className="max-w-sm text-sm text-slate-400">
-                  Add a contact&apos;s public GPG key to start a secure
-                  conversation.
+                  Crea un chat sin clave pública o cifra mensajes para ti con
+                  la clave de este perfil.
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onOpenAddContactDialog}
-                className="border-slate-700"
-              >
-                <UserPlus className="size-4 mr-2" /> Add contact
-              </Button>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCreateSelfChat}
+                  className="border-slate-700"
+                >
+                  <UserRound className="size-4 mr-2" /> Chatear conmigo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onOpenAddContactDialog}
+                  className="border-slate-700"
+                >
+                  <UserPlus className="size-4 mr-2" /> Agregar chat
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="grid min-h-0 flex-1 md:grid-cols-[minmax(15rem,22rem)_1fr] w-full">
@@ -134,7 +160,11 @@ export function MessengerCard({
                               {contact.name}
                             </span>
                             <span className="block truncate text-[10px] text-emerald-400">
-                              Secure chat
+                              {contactKind(contact) === "self"
+                                ? "Contigo"
+                                : contactKind(contact) === "local"
+                                  ? "Sin clave"
+                                  : "Secure chat"}
                             </span>
                           </span>
                         </span>
@@ -169,9 +199,7 @@ export function MessengerCard({
                         {selectedContact?.name ?? "Select a chat"}
                       </p>
                       <p className="truncate text-[10px] text-emerald-400">
-                        {selectedContact
-                          ? "Encrypted with OpenPGP"
-                          : "Choose a contact to begin"}
+                        {statusLabel}
                       </p>
                     </div>
                   </div>
@@ -183,27 +211,40 @@ export function MessengerCard({
                     <p className="mx-auto max-w-xs text-center text-xs leading-relaxed text-slate-500">
                       Select a contact from your chats.
                     </p>
-                  ) : encryptedMessage ? (
+                  ) : sentPlaintext || encryptedMessage ? (
                     <div className="ml-auto max-w-[92%] space-y-2 sm:max-w-[80%]">
                       <div className="rounded-xl rounded-br-md bg-blue-600 px-4 py-3 text-sm text-white shadow-md shadow-blue-950/20">
                         <p className="mb-2 text-[10px] text-blue-100">
-                          Encrypted message
+                          {showingDecrypted
+                            ? "Mensaje descifrado"
+                            : selectedKind === "local"
+                              ? "Nota local"
+                              : selectedKind === "self"
+                                ? "Cifrado para ti"
+                                : "Encrypted message"}
                         </p>
                         <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed">
-                          {encryptedMessage}
+                          {sentPlaintext || encryptedMessage}
                         </pre>
                       </div>
                       <div className="flex justify-end">
                         <button
                           type="button"
                           onClick={() =>
-                            onCopyText(encryptedMessage, "contact-message")
+                            onCopyText(
+                              encryptedMessage || sentPlaintext,
+                              "contact-message",
+                            )
                           }
                           className="text-[11px] text-blue-400 hover:underline"
                         >
                           {copiedId === "contact-message"
-                            ? "Copied!"
-                            : "Copy encrypted message"}
+                            ? "Copiado"
+                            : showingDecrypted
+                              ? "Copiar mensaje"
+                              : encryptedMessage
+                                ? "Copiar mensaje cifrado"
+                                : "Copiar nota"}
                         </button>
                       </div>
                     </div>
@@ -217,13 +258,15 @@ export function MessengerCard({
                 <div className="border-t border-slate-800 bg-slate-900/70 p-3">
                   <div className="flex items-end gap-2 rounded-xl border border-slate-700 bg-slate-950 p-2 focus-within:border-blue-500/70">
                     <Textarea
-                      rows={1}
                       value={messageToContact}
                       onChange={(event) => onMessageChange(event.target.value)}
                       placeholder={
                         selectedContact
-                          ? "Write a message..."
+                          ? "Mensaje, o /descifrar y el bloque cifrado"
                           : "Select a contact first"
+                      }
+                      rows={
+                        messageToContact.includes("BEGIN PGP MESSAGE") ? 6 : 1
                       }
                       disabled={!selectedContact}
                       className="min-h-9 resize-none border-0 bg-transparent px-2 py-1.5 text-sm text-white shadow-none focus-visible:ring-0"
@@ -237,8 +280,12 @@ export function MessengerCard({
                         !messageToContact.trim() ||
                         isEncryptingMessage
                       }
-                      title="Encrypt and send"
-                      aria-label="Encrypt and send"
+                      title={
+                        selectedKind === "local" ? "Guardar nota" : "Cifrar y enviar"
+                      }
+                      aria-label={
+                        selectedKind === "local" ? "Guardar nota" : "Cifrar y enviar"
+                      }
                       className="size-9 shrink-0 rounded-full bg-blue-600 hover:bg-blue-700"
                     >
                       {isEncryptingMessage ? (

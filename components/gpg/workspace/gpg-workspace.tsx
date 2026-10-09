@@ -24,6 +24,8 @@ interface GpgWorkspaceProps {
   selectedContactId: string;
   messageToContact: string;
   encryptedMessage: string;
+  sentPlaintext: string;
+  showingDecrypted: boolean;
   isEncryptingMessage: boolean;
   contactError: string | null;
   showMessenger: boolean;
@@ -33,6 +35,7 @@ interface GpgWorkspaceProps {
   onSelectContact: (contactId: string) => void;
   onDeleteContact: (contactId: string) => void;
   onOpenAddContactDialog: () => void;
+  onCreateSelfChat: () => void;
   onMessageToContactChange: (val: string) => void;
   onEncryptMessage: () => void;
   onUnlockPassphraseChange: (val: string) => void;
@@ -56,6 +59,8 @@ export function GpgWorkspace({
   selectedContactId,
   messageToContact,
   encryptedMessage,
+  sentPlaintext,
+  showingDecrypted,
   isEncryptingMessage,
   contactError,
   showMessenger,
@@ -65,6 +70,7 @@ export function GpgWorkspace({
   onSelectContact,
   onDeleteContact,
   onOpenAddContactDialog,
+  onCreateSelfChat,
   onMessageToContactChange,
   onEncryptMessage,
   onUnlockPassphraseChange,
@@ -102,6 +108,8 @@ export function GpgWorkspace({
         selectedContactId={selectedContactId}
         messageToContact={messageToContact}
         encryptedMessage={encryptedMessage}
+        sentPlaintext={sentPlaintext}
+        showingDecrypted={showingDecrypted}
         isEncryptingMessage={isEncryptingMessage}
         contactError={contactError}
         copiedId={copiedId}
@@ -109,6 +117,7 @@ export function GpgWorkspace({
         onSelectContact={onSelectContact}
         onDeleteContact={onDeleteContact}
         onOpenAddContactDialog={onOpenAddContactDialog}
+        onCreateSelfChat={onCreateSelfChat}
         onMessageChange={onMessageToContactChange}
         onEncryptMessage={onEncryptMessage}
         onCopyText={onCopyText}
