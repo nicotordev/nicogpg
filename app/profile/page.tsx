@@ -21,13 +21,13 @@ export default async function ProfilePage({
   const params = await searchParams;
 
   return (
-    <main className="min-h-screen w-full bg-slate-950">
+    <div className="min-h-screen w-full bg-slate-950">
       <NetflixGpgSelector
         key={`profile-${params.key ?? "primary"}`}
         initialSession={session}
         pageMode="profile"
         profileKeyId={params.key}
       />
-    </main>
+    </div>
   );
 }
