@@ -42,6 +42,7 @@ interface GpgWorkspaceProps {
   onUnlockKeySubmit: (e: React.FormEvent) => void;
   onMessageToSignChange: (val: string) => void;
   onSignMessage: () => void;
+  onToggleMessenger?: (show: boolean) => void;
 }
 
 export function GpgWorkspace({
@@ -77,6 +78,7 @@ export function GpgWorkspace({
   onUnlockKeySubmit,
   onMessageToSignChange,
   onSignMessage,
+  onToggleMessenger,
 }: GpgWorkspaceProps) {
   return (
     <div
@@ -90,8 +92,10 @@ export function GpgWorkspace({
       <WorkspaceHeader
         selectedKey={selectedKey}
         pageMode={pageMode}
+        showMessenger={showMessenger}
         onBackToProfiles={onBackToProfiles}
         onDeleteProfile={onDeleteProfile}
+        onToggleMessenger={onToggleMessenger}
       />
 
       <ProfileOverviewCard

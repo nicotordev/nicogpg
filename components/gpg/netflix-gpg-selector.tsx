@@ -102,9 +102,14 @@ function NetflixGpgSelectorContent() {
             }
             onCopyText={copyText}
             onSelectContact={contactsState.selectContact}
-            onCreateSelfChat={() =>
-              contactsState.handleCreateSelfChat(keysState.selectedKey)
-            }
+            onCreateSelfChat={() => {
+              const activeKey = keysState.selectedKey ?? keysState.keys[0];
+              if (!keysState.selectedKey && activeKey) {
+                keysState.setSelectedKey(activeKey);
+              }
+              contactsState.handleCreateSelfChat(activeKey);
+              setShowMessenger(true);
+            }}
             onDeleteContact={(contactId) => {
               const contact = contactsState.contacts.find(
                 (c) => c.id === contactId,
@@ -130,6 +135,7 @@ function NetflixGpgSelectorContent() {
             }
             onMessageToSignChange={cryptoState.setMessageToSign}
             onSignMessage={cryptoState.handleSignMessage}
+            onToggleMessenger={setShowMessenger}
           />
         ) : (
           <ProfileSelectorGrid
@@ -186,8 +192,11 @@ function NetflixGpgSelectorContent() {
         <BottomNav
           selectedKeyId={keysState.selectedKey.id}
           pageMode={pageMode}
+          showMessenger={showMessenger}
           onOpenContacts={() => contactsState.setIsContactDialogOpen(true)}
           onShowSecurity={() => setShowMessenger(false)}
+          onShowChat={() => setShowMessenger(true)}
+          onBackToProfiles={keysState.handleBackToProfiles}
         />
       )}
 
@@ -312,9 +321,14 @@ function NetflixGpgSelectorContent() {
         onContactKeyTextChange={contactsState.setContactKeyText}
         contactError={contactsState.contactError}
         onSubmit={contactsState.handleAddContact}
-        onCreateSelfChat={() =>
-          contactsState.handleCreateSelfChat(keysState.selectedKey)
-        }
+        onCreateSelfChat={() => {
+          const activeKey = keysState.selectedKey ?? keysState.keys[0];
+          if (!keysState.selectedKey && activeKey) {
+            keysState.setSelectedKey(activeKey);
+          }
+          contactsState.handleCreateSelfChat(activeKey);
+          setShowMessenger(true);
+        }}
       />
     </div>
   );

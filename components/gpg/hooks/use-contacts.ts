@@ -96,9 +96,10 @@ export function useContacts() {
   );
 
   const handleCreateSelfChat = useCallback(
-    (selectedKey: GpgKeyDto | null) => {
-      if (!selectedKey?.publicKey) {
-        setContactError("Este perfil no tiene una clave pública.");
+    (selectedKey: GpgKeyDto | null, fallbackKey?: GpgKeyDto | null) => {
+      const key = selectedKey ?? fallbackKey;
+      if (!key) {
+        setContactError("Selecciona una identidad de perfil primero.");
         setIsContactDialogOpen(true);
         return;
       }
@@ -106,10 +107,11 @@ export function useContacts() {
       const existing = contacts.find(
         (contact) =>
           contactKind(contact) === "self" &&
-          contact.fingerprint === selectedKey.fingerprint,
+          ((key.fingerprint && contact.fingerprint === key.fingerprint) ||
+            contact.name === `Yo · ${key.handle}`),
       );
       if (existing) {
-        setSelectedContactId(existing.id);
+        selectContact(existing.id);
         setContactError(null);
         setIsContactDialogOpen(false);
         return;
@@ -117,13 +119,13 @@ export function useContacts() {
 
       rememberContact({
         id: crypto.randomUUID(),
-        name: `Yo · ${selectedKey.handle}`,
+        name: `Yo · ${key.handle}`,
         kind: "self",
-        fingerprint: selectedKey.fingerprint,
-        publicKey: selectedKey.publicKey,
+        fingerprint: key.fingerprint || "",
+        publicKey: key.publicKey || "",
       });
     },
-    [contacts, rememberContact],
+    [contacts, selectContact, rememberContact],
   );
 
   const handleAddContact = useCallback(
