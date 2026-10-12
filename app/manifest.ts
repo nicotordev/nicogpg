@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "nicogpg - Zero-Knowledge OpenPGP Vault",
+    name: "nicogpg",
     short_name: "nicogpg",
     description:
-      "Zero-Knowledge OpenPGP Identity Selector and Secure Messaging Workspace",
+      "Encrypted OpenPGP key vault. Unlock keys in the browser to encrypt, decrypt, and sign without sending your passphrase to the server.",
     start_url: "/",
     display: "standalone",
     orientation: "portrait-primary",
@@ -14,9 +14,10 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["utilities", "security"],
     icons: [
       {
-        src: "/favicon.ico",
+        src: "/logo.svg",
         sizes: "any",
-        type: "image/x-icon",
+        type: "image/svg+xml",
+        purpose: "any",
       },
     ],
   };

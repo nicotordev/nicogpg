@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { VerifyEmail } from "@/components/auth/verify-email";
 
 export const metadata: Metadata = {
-  title: "Verifica tu email | nicogpg",
+  title: "Verifica tu correo",
+  description:
+    "Confirma el correo de tu cuenta para activar el acceso a tu bóveda de claves OpenPGP.",
 };
 
 type VerifyEmailPageProps = {

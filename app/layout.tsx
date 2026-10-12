@@ -32,11 +32,55 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+const appTitle = "OpenPGP key vault";
+const appDescription =
+  "nicogpg stores encrypted OpenPGP key profiles. Your passphrase never leaves the browser, where you unlock a key to encrypt, decrypt, and sign.";
+
+function metadataBaseUrl(): URL {
+  const raw = process.env.BETTER_AUTH_URL;
+  if (raw) {
+    try {
+      return new URL(raw);
+    } catch {
+      return new URL("http://localhost:3000");
+    }
+  }
+  return new URL("http://localhost:3000");
+}
+
 export const metadata: Metadata = {
-  title: "nicogpg - Zero-Knowledge OpenPGP Vault",
-  description:
-    "Secure, zero-knowledge OpenPGP key profile selector and encrypted messaging.",
+  metadataBase: metadataBaseUrl(),
+  title: {
+    default: appTitle,
+    template: "%s · nicogpg",
+  },
+  description: appDescription,
   applicationName: "nicogpg",
+  authors: [{ name: "nicogpg" }],
+  creator: "nicogpg",
+  keywords: ["OpenPGP", "GPG", "zero-knowledge", "encryption", "nicogpg"],
+  icons: {
+    icon: [{ url: "/logo.svg", type: "image/svg+xml", sizes: "any" }],
+    apple: [{ url: "/logo.svg", type: "image/svg+xml", sizes: "any" }],
+    shortcut: ["/logo.svg"],
+  },
+  openGraph: {
+    type: "website",
+    siteName: "nicogpg",
+    images: [
+      {
+        url: "/logo.svg",
+        width: 1500,
+        height: 1500,
+        alt: "nicogpg",
+        type: "image/svg+xml",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    images: ["/logo.svg"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

@@ -4,7 +4,9 @@ import { AuthScreen } from "@/components/auth/auth-screen";
 import { SignInForm } from "@/components/auth/sign-in-form";
 
 export const metadata: Metadata = {
-  title: "Iniciar sesión | nicogpg",
+  title: "Iniciar sesión",
+  description:
+    "Entra a tu bóveda OpenPGP con correo y contraseña, código OTP, enlace de acceso o passkey.",
 };
 
 export default function SignInPage() {

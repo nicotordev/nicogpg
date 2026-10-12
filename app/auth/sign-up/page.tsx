@@ -3,7 +3,9 @@ import { AuthScreen } from "@/components/auth/auth-screen";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 
 export const metadata: Metadata = {
-  title: "Crear cuenta | nicogpg",
+  title: "Crear cuenta",
+  description:
+    "Crea una cuenta de nicogpg para guardar perfiles de claves OpenPGP cifrados y usarlos desde el navegador.",
 };
 
 export default function SignUpPage() {

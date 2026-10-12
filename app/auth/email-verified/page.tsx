@@ -3,7 +3,9 @@ import Link from "next/link";
 import { AuthScreen } from "@/components/auth/auth-screen";
 
 export const metadata: Metadata = {
-  title: "Email verificado | nicogpg",
+  title: "Correo verificado",
+  description:
+    "Tu correo quedó verificado. Ya puedes iniciar sesión y abrir tus claves OpenPGP en nicogpg.",
 };
 
 export default function EmailVerifiedPage() {

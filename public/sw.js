@@ -1,11 +1,7 @@
 // nicogpg Service Worker - Web Native Offline & App Shell Cache
-const CACHE_NAME = "nicogpg-native-v1";
+const CACHE_NAME = "nicogpg-native-v3";
 
-const PRECACHE_ASSETS = [
-  "/",
-  "/favicon.ico",
-  "/manifest.webmanifest",
-];
+const PRECACHE_ASSETS = ["/", "/logo.svg", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

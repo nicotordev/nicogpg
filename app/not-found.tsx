@@ -2,8 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Página no encontrada | nicogpg",
-  description: "La página que buscas no existe.",
+  title: "Página no encontrada",
+  description:
+    "Esa ruta no existe en nicogpg. Vuelve al inicio para elegir una clave OpenPGP.",
 };
 
 export default function NotFound() {

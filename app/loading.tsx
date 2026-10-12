@@ -1,4 +1,4 @@
-import { Key, Shield, Plus } from "lucide-react";
+import { Shield, Plus } from "lucide-react";
 
 export default function HomeLoading() {
   return (
@@ -12,9 +12,11 @@ export default function HomeLoading() {
       <header className="sticky top-0 z-40 w-full border-b border-white/6 bg-slate-950/85 px-3 py-3 backdrop-blur-xl sm:px-6 sm:py-4">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <div className="flex size-8 sm:size-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-red-600 to-rose-700 shadow-lg shadow-red-900/40">
-              <Key className="size-5 text-white animate-pulse" />
-            </div>
+            <img
+              src="/logo.svg"
+              alt=""
+              className="size-8 shrink-0 animate-pulse rounded-xl object-cover sm:size-9"
+            />
             <span className="text-lg sm:text-xl font-bold tracking-tight text-white font-heading">
               nico<span className="text-red-500">gpg</span>
             </span>

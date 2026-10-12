@@ -3,7 +3,11 @@ import Link from "next/link";
 import { AuthScreen } from "@/components/auth/auth-screen";
 import { RegisterPasskey } from "@/components/auth/register-passkey";
 
-export const metadata: Metadata = { title: "Passkeys | nicogpg" };
+export const metadata: Metadata = {
+  title: "Passkeys",
+  description:
+    "Registra una passkey para entrar a nicogpg con huella, rostro, PIN o llave de seguridad.",
+};
 
 export default function PasskeysPage() {
   return (

@@ -4,8 +4,9 @@ import { redirectToSignIn } from "./actions/redirect.actions";
 import { NetflixGpgSelector } from "@/components/gpg/netflix-gpg-selector";
 
 export const metadata: Metadata = {
-  title: "nicogpg - Netflix-style GPG Identity Selector",
-  description: "Secure, zero-knowledge OpenPGP key profile selector with infinite scroll.",
+  title: { absolute: "Choose a key · nicogpg" },
+  description:
+    "Choose an OpenPGP profile or import a key block or file. Open it to encrypt, decrypt, and sign while the passphrase stays in your browser.",
 };
 
 export const dynamic = "force-dynamic";
