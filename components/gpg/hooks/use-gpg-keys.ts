@@ -14,6 +14,9 @@ import type { DeleteRequest } from "../types";
 interface UseGpgKeysOptions {
   pageMode?: "dashboard" | "profile";
   profileKeyId?: string;
+  initialKeys?: GpgKeyDto[];
+  initialNextCursor?: string | null;
+  initialSelectedKey?: GpgKeyDto | null;
   onProfileSelected?: (profile: GpgKeyDto) => void;
   onClearProfile?: () => void;
 }
@@ -21,18 +24,21 @@ interface UseGpgKeysOptions {
 export function useGpgKeys({
   pageMode = "dashboard",
   profileKeyId,
+  initialKeys,
+  initialNextCursor = null,
+  initialSelectedKey = null,
   onProfileSelected,
   onClearProfile,
 }: UseGpgKeysOptions = {}) {
   const router = useRouter();
 
   // Keys list & pagination state
-  const [keys, setKeys] = useState<GpgKeyDto[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [keys, setKeys] = useState<GpgKeyDto[]>(initialKeys ?? []);
+  const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor ?? null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Selected Active Profile
-  const [selectedKey, setSelectedKey] = useState<GpgKeyDto | null>(null);
+  const [selectedKey, setSelectedKey] = useState<GpgKeyDto | null>(initialSelectedKey ?? null);
 
   // Profile Menu, Edit & Reorder State
   const [openKeyMenuId, setOpenKeyMenuId] = useState<string | null>(null);
@@ -62,8 +68,18 @@ export function useGpgKeys({
     onClearProfileRef.current = onClearProfile;
   });
 
+  const didInitialLoadRef = useRef(Boolean(initialKeys));
+
   // Initial load
   useEffect(() => {
+    if (didInitialLoadRef.current) {
+      didInitialLoadRef.current = false;
+      if (initialSelectedKey) {
+        onProfileSelectedRef.current?.(initialSelectedKey);
+      }
+      return;
+    }
+
     let isMounted = true;
     getGpgKeysAction({ cursor: undefined, limit: 8 }).then(async (res) => {
       if (!isMounted) return;
@@ -83,7 +99,7 @@ export function useGpgKeys({
     return () => {
       isMounted = false;
     };
-  }, [pageMode, profileKeyId]);
+  }, [pageMode, profileKeyId, initialSelectedKey]);
 
   // Infinite Scroll Trigger
   const fetchMoreKeys = useCallback(async () => {

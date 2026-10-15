@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getSessionAction } from "../actions/auth.actions";
 import { redirectToSignIn } from "../actions/redirect.actions";
+import { getGpgKeysAction, getGpgKeyByIdAction } from "../actions/gpg.actions";
 import { NetflixGpgSelector } from "@/components/gpg/netflix-gpg-selector";
 
 export const metadata: Metadata = {
@@ -21,6 +22,15 @@ export default async function ProfilePage({
 
   const params = await searchParams;
 
+  const [initialData, selectedKeyFromParam] = await Promise.all([
+    getGpgKeysAction({ limit: 8 }),
+    params.key ? getGpgKeyByIdAction(params.key) : Promise.resolve(null),
+  ]);
+
+  const initialSelectedKey = params.key
+    ? (initialData.keys.find((k) => k.id === params.key) ?? selectedKeyFromParam)
+    : (initialData.keys[0] ?? null);
+
   return (
     <div className="min-h-screen w-full bg-slate-950">
       <NetflixGpgSelector
@@ -28,6 +38,9 @@ export default async function ProfilePage({
         initialSession={session}
         pageMode="profile"
         profileKeyId={params.key}
+        initialKeys={initialData.keys}
+        initialNextCursor={initialData.nextCursor}
+        initialSelectedKey={initialSelectedKey}
       />
     </div>
   );

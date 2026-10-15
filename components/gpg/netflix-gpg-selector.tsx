@@ -338,12 +338,18 @@ export function NetflixGpgSelector({
   initialSession,
   pageMode = "dashboard",
   profileKeyId,
+  initialKeys,
+  initialNextCursor,
+  initialSelectedKey,
 }: NetflixGpgSelectorProps) {
   return (
     <GpgProvider
       initialSession={initialSession}
       pageMode={pageMode}
       profileKeyId={profileKeyId}
+      initialKeys={initialKeys}
+      initialNextCursor={initialNextCursor}
+      initialSelectedKey={initialSelectedKey}
     >
       <NetflixGpgSelectorContent />
     </GpgProvider>

@@ -49,6 +49,9 @@ interface GpgProviderProps {
   initialSession: Session | null;
   pageMode?: "dashboard" | "profile";
   profileKeyId?: string;
+  initialKeys?: GpgKeyDto[];
+  initialNextCursor?: string | null;
+  initialSelectedKey?: GpgKeyDto | null;
 }
 
 export function GpgProvider({
@@ -56,6 +59,9 @@ export function GpgProvider({
   initialSession,
   pageMode = "dashboard",
   profileKeyId,
+  initialKeys,
+  initialNextCursor,
+  initialSelectedKey,
 }: GpgProviderProps) {
   const router = useRouter();
   const { data: sessionData } = authClient.useSession();
@@ -82,6 +88,9 @@ export function GpgProvider({
   const keysState = useGpgKeys({
     pageMode,
     profileKeyId,
+    initialKeys,
+    initialNextCursor,
+    initialSelectedKey,
     onProfileSelected: handleProfileSelected,
     onClearProfile: handleClearProfile,
   });
