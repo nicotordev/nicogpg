@@ -25,6 +25,8 @@ model User {
 
   passkeys Passkey[]
   gpgKeys  GpgKey[]
+  contacts Contact[]
+  conversations Conversation[]
 
   @@unique([email])
   @@map("user")
@@ -114,10 +116,55 @@ model GpgKey {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
+  messages Message[]
+
   @@unique([userId, fingerprint])
   @@index([userId])
   @@index([keyId])
   @@map("gpg_key")
+}
+
+model Contact {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  kind         String
+  fingerprint  String        @default("")
+  publicKey    String?       @db.Text
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  conversation Conversation?
+
+  @@index([userId, createdAt])
+  @@map("contact")
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactId String    @unique
+  contact   Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+
+  @@index([userId, updatedAt])
+  @@map("conversation")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  ownerKeyId     String?
+  ownerKey       GpgKey?      @relation(fields: [ownerKeyId], references: [id], onDelete: SetNull)
+  ciphertext     String       @db.Text
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("message")
 }
 
 model ContactBook {

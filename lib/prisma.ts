@@ -14,6 +14,11 @@ function createPrismaClient() {
   return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 }
 
+const cached = globalForPrisma.prisma;
+if (cached && !("contact" in cached)) {
+  globalForPrisma.prisma = undefined;
+}
+
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
