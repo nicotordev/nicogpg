@@ -14,8 +14,6 @@ export const AVATAR_GRADIENTS: Record<string, string> = {
 
 export interface NetflixGpgSelectorProps {
   initialSession: Session | null;
-  pageMode?: "dashboard" | "profile";
-  profileKeyId?: string;
   initialKeys?: GpgKeyDto[];
   initialNextCursor?: string | null;
   initialSelectedKey?: GpgKeyDto | null;
@@ -29,6 +27,14 @@ export interface Contact {
   fingerprint: string;
   publicKey: string;
   kind?: ContactKind;
+  hasMessages: boolean;
+}
+
+export interface ChatMessage {
+  id: string;
+  ciphertext: string;
+  createdAt: string;
+  revealedText?: string;
 }
 
 export function contactKind(contact: Contact): ContactKind {

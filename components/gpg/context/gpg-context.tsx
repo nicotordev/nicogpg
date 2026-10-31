@@ -15,11 +15,13 @@ import { useGpgKeys } from "../hooks/use-gpg-keys";
 import { useCryptoWorkspace } from "../hooks/use-crypto-workspace";
 import { useContacts } from "../hooks/use-contacts";
 import { useKeyCreation } from "../hooks/use-key-creation";
+import {
+  pauseSelectedProfileFallback,
+  useSelectedProfileStore,
+} from "../selected-profile-store";
 
 interface GpgContextValue {
   session: Session | null;
-  pageMode: "dashboard" | "profile";
-  profileKeyId?: string;
 
   // Keys & Management
   keysState: ReturnType<typeof useGpgKeys>;
@@ -34,8 +36,6 @@ interface GpgContextValue {
   keyCreationState: ReturnType<typeof useKeyCreation>;
 
   // General UI state
-  showMessenger: boolean;
-  setShowMessenger: (show: boolean) => void;
   copiedId: string | null;
   copyText: (text: string, id: string) => void;
   completeKeySave: (key: GpgKeyDto) => void;
@@ -47,8 +47,6 @@ const GpgContext = createContext<GpgContextValue | null>(null);
 interface GpgProviderProps {
   children: ReactNode;
   initialSession: Session | null;
-  pageMode?: "dashboard" | "profile";
-  profileKeyId?: string;
   initialKeys?: GpgKeyDto[];
   initialNextCursor?: string | null;
   initialSelectedKey?: GpgKeyDto | null;
@@ -57,41 +55,29 @@ interface GpgProviderProps {
 export function GpgProvider({
   children,
   initialSession,
-  pageMode = "dashboard",
-  profileKeyId,
   initialKeys,
   initialNextCursor,
   initialSelectedKey,
 }: GpgProviderProps) {
-  const router = useRouter();
   const { data: sessionData } = authClient.useSession();
   const session = (sessionData || initialSession) ?? null;
 
+  const router = useRouter();
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [showMessenger, setShowMessenger] = useState(pageMode !== "profile");
 
   const cryptoState = useCryptoWorkspace();
   const contactsState = useContacts();
 
   const { lockKey } = cryptoState;
 
-  const handleProfileSelected = useCallback(() => {
-    lockKey();
-    setShowMessenger(pageMode !== "profile");
-  }, [lockKey, pageMode]);
-
   const handleClearProfile = useCallback(() => {
     lockKey();
-    setShowMessenger(true);
   }, [lockKey]);
 
   const keysState = useGpgKeys({
-    pageMode,
-    profileKeyId,
     initialKeys,
     initialNextCursor,
     initialSelectedKey,
-    onProfileSelected: handleProfileSelected,
     onClearProfile: handleClearProfile,
   });
 
@@ -110,16 +96,17 @@ export function GpgProvider({
         ...prev.filter((item) => item.id !== key.id),
       ]);
       cryptoState.lockKey();
+      useSelectedProfileStore.getState().setProfileKeyId(key.id);
+      useSelectedProfileStore.getState().setPendingUnlockId(key.id);
       keysState.setSelectedKey(key);
-      setShowMessenger(pageMode !== "profile");
-      const targetUrl =
-        pageMode === "profile" ? `/profile?key=${key.id}` : `/?key=${key.id}`;
-      router.push(targetUrl);
+      router.push("/");
     },
-    [cryptoState, keysState, pageMode, router],
+    [cryptoState, keysState, router],
   );
 
   const handleSignOut = useCallback(async () => {
+    pauseSelectedProfileFallback();
+    useSelectedProfileStore.getState().setProfileKeyId(null);
     cryptoState.lockKey();
     await authClient.signOut();
     window.location.reload();
@@ -129,14 +116,10 @@ export function GpgProvider({
     <GpgContext.Provider
       value={{
         session,
-        pageMode,
-        profileKeyId,
         keysState,
         cryptoState,
         contactsState,
         keyCreationState,
-        showMessenger,
-        setShowMessenger,
         copiedId,
         copyText,
         completeKeySave,

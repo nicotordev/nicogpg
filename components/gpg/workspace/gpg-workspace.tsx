@@ -1,36 +1,31 @@
 import type { GpgKeyDto } from "@/app/actions/gpg.actions";
 import type { PrivateKey } from "openpgp";
-import type { Contact } from "../types";
+import type { ChatMessage, Contact } from "../types";
 import { cn } from "@/lib/utils";
 import { WorkspaceHeader } from "./workspace-header";
 import { ProfileOverviewCard } from "./profile-overview-card";
 import { MessengerCard } from "./messenger-card";
 import { SecurityNoticeCard } from "./security-notice-card";
-import { UnlockKeyCard } from "./unlock-key-card";
 import { SignMessageCard } from "./sign-message-card";
 
 interface GpgWorkspaceProps {
   selectedKey: GpgKeyDto;
-  pageMode?: "dashboard" | "profile";
   unlockedPrivateKey: PrivateKey | null;
-  unlockPassphraseInput: string;
-  isUnlocking: boolean;
-  unlockError: string | null;
   messageToSign: string;
   signedOutput: string;
   isSigning: boolean;
   copiedId: string | null;
   contacts: Contact[];
+  contactsReady: boolean;
   selectedContactId: string;
+  selectedMessages: ChatMessage[];
+  loadingMessages: boolean;
   messageToContact: string;
-  encryptedMessage: string;
-  sentPlaintext: string;
-  showingDecrypted: boolean;
   isEncryptingMessage: boolean;
   contactError: string | null;
   showMessenger: boolean;
-  onBackToProfiles: () => void;
   onDeleteProfile: (e: React.MouseEvent) => void;
+  onLeaveProfile: () => void;
   onCopyText: (text: string, id: string) => void;
   onSelectContact: (contactId: string) => void;
   onDeleteContact: (contactId: string) => void;
@@ -38,35 +33,28 @@ interface GpgWorkspaceProps {
   onCreateSelfChat: () => void;
   onMessageToContactChange: (val: string) => void;
   onEncryptMessage: () => void;
-  onUnlockPassphraseChange: (val: string) => void;
-  onUnlockKeySubmit: (e: React.FormEvent) => void;
   onMessageToSignChange: (val: string) => void;
   onSignMessage: () => void;
-  onToggleMessenger?: (show: boolean) => void;
 }
 
 export function GpgWorkspace({
   selectedKey,
-  pageMode = "dashboard",
   unlockedPrivateKey,
-  unlockPassphraseInput,
-  isUnlocking,
-  unlockError,
   messageToSign,
   signedOutput,
   isSigning,
   copiedId,
   contacts,
+  contactsReady,
   selectedContactId,
+  selectedMessages,
+  loadingMessages,
   messageToContact,
-  encryptedMessage,
-  sentPlaintext,
-  showingDecrypted,
   isEncryptingMessage,
   contactError,
   showMessenger,
-  onBackToProfiles,
   onDeleteProfile,
+  onLeaveProfile,
   onCopyText,
   onSelectContact,
   onDeleteContact,
@@ -74,30 +62,27 @@ export function GpgWorkspace({
   onCreateSelfChat,
   onMessageToContactChange,
   onEncryptMessage,
-  onUnlockPassphraseChange,
-  onUnlockKeySubmit,
   onMessageToSignChange,
   onSignMessage,
-  onToggleMessenger,
 }: GpgWorkspaceProps) {
   return (
     <div
       className={cn(
         "flex w-full flex-1 animate-in fade-in duration-300 flex-col",
-        pageMode === "profile"
-          ? "min-h-0 space-y-8 bg-[#060914] sm:space-y-10"
-          : "min-h-[calc(100vh-4.5rem)]",
+        showMessenger
+          ? "min-h-0 basis-0 flex-1 overflow-hidden"
+          : "min-h-0 bg-[#060914] pb-24",
       )}
     >
+      {showMessenger ? null : (
       <WorkspaceHeader
         selectedKey={selectedKey}
-        pageMode={pageMode}
-        showMessenger={showMessenger}
-        onBackToProfiles={onBackToProfiles}
         onDeleteProfile={onDeleteProfile}
-        onToggleMessenger={onToggleMessenger}
+        onLeaveProfile={onLeaveProfile}
       />
+      )}
 
+      {showMessenger ? null : (
       <ProfileOverviewCard
         selectedKey={selectedKey}
         unlockedPrivateKey={unlockedPrivateKey}
@@ -106,14 +91,16 @@ export function GpgWorkspace({
         onCopyText={onCopyText}
         onDeleteProfile={onDeleteProfile}
       />
+      )}
 
+      {showMessenger ? (
       <MessengerCard
         contacts={contacts}
+        contactsReady={contactsReady}
         selectedContactId={selectedContactId}
+        selectedMessages={selectedMessages}
+        loadingMessages={loadingMessages}
         messageToContact={messageToContact}
-        encryptedMessage={encryptedMessage}
-        sentPlaintext={sentPlaintext}
-        showingDecrypted={showingDecrypted}
         isEncryptingMessage={isEncryptingMessage}
         contactError={contactError}
         copiedId={copiedId}
@@ -126,21 +113,11 @@ export function GpgWorkspace({
         onEncryptMessage={onEncryptMessage}
         onCopyText={onCopyText}
       />
+      ) : null}
 
-      <SecurityNoticeCard showMessenger={showMessenger} />
+      {showMessenger ? null : <SecurityNoticeCard showMessenger={showMessenger} />}
 
-      <UnlockKeyCard
-        showMessenger={showMessenger}
-        hasEncryptedPrivateKey={Boolean(selectedKey.encryptedPrivateKey)}
-        isUnlocked={Boolean(unlockedPrivateKey)}
-        passphraseInput={unlockPassphraseInput}
-        isUnlocking={isUnlocking}
-        unlockError={unlockError}
-        onPassphraseChange={onUnlockPassphraseChange}
-        onSubmit={onUnlockKeySubmit}
-      />
-
-      <div className="px-4 md:px-2">
+      {showMessenger ? null : <div className="px-4 md:px-2">
         <SignMessageCard
           showMessenger={showMessenger}
           isUnlocked={Boolean(unlockedPrivateKey)}
@@ -152,7 +129,7 @@ export function GpgWorkspace({
           onSignMessage={onSignMessage}
           onCopyText={onCopyText}
         />
-      </div>
+      </div>}
     </div>
   );
 }

@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { Shield, Upload, UserPlus, Plus, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { Session } from "@/app/actions/auth.actions";
 
 interface GpgHeaderProps {
   session: Session | null;
   onOpenImportModal: () => void;
-  onOpenContactsDialog: () => void;
   onOpenGenerateModal: () => void;
   onSignOut: () => void;
 }
@@ -15,7 +15,6 @@ interface GpgHeaderProps {
 export function GpgHeader({
   session,
   onOpenImportModal,
-  onOpenContactsDialog,
   onOpenGenerateModal,
   onSignOut,
 }: GpgHeaderProps) {
@@ -56,17 +55,18 @@ export function GpgHeader({
                 <Upload className="size-4 sm:mr-1.5 text-blue-400" />
                 <span className="hidden sm:inline">Import Key</span>
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
+              <Link
+                href="/contacts"
                 title="Contacts"
                 aria-label="Contacts"
-                onClick={onOpenContactsDialog}
-                className="bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-200"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "bg-slate-900 border-slate-700 hover:bg-slate-800 text-slate-200",
+                )}
               >
                 <UserPlus className="size-4 sm:mr-1.5 text-emerald-400" />
                 <span className="hidden sm:inline">Contacts</span>
-              </Button>
+              </Link>
               <Button
                 variant="outline"
                 size="sm"

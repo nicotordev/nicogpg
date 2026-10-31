@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import {
   getGpgKeysAction,
   getGpgKeyByIdAction,
@@ -10,10 +9,9 @@ import {
   type GpgKeyDto,
 } from "@/app/actions/gpg.actions";
 import type { DeleteRequest } from "../types";
+import { useSelectedProfileStore } from "../selected-profile-store";
 
 interface UseGpgKeysOptions {
-  pageMode?: "dashboard" | "profile";
-  profileKeyId?: string;
   initialKeys?: GpgKeyDto[];
   initialNextCursor?: string | null;
   initialSelectedKey?: GpgKeyDto | null;
@@ -22,16 +20,13 @@ interface UseGpgKeysOptions {
 }
 
 export function useGpgKeys({
-  pageMode = "dashboard",
-  profileKeyId,
   initialKeys,
   initialNextCursor = null,
   initialSelectedKey = null,
   onProfileSelected,
   onClearProfile,
 }: UseGpgKeysOptions = {}) {
-  const router = useRouter();
-
+  const profileKeyId = useSelectedProfileStore((state) => state.profileKeyId);
   // Keys list & pagination state
   const [keys, setKeys] = useState<GpgKeyDto[]>(initialKeys ?? []);
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor ?? null);
@@ -68,17 +63,19 @@ export function useGpgKeys({
     onClearProfileRef.current = onClearProfile;
   });
 
-  const didInitialLoadRef = useRef(Boolean(initialKeys));
+  const didNotifyInitialRef = useRef(false);
 
-  // Initial load
+  // Notify initial selected key once on mount
   useEffect(() => {
-    if (didInitialLoadRef.current) {
-      didInitialLoadRef.current = false;
-      if (initialSelectedKey) {
-        onProfileSelectedRef.current?.(initialSelectedKey);
-      }
-      return;
+    if (!didNotifyInitialRef.current && initialSelectedKey) {
+      didNotifyInitialRef.current = true;
+      onProfileSelectedRef.current?.(initialSelectedKey);
     }
+  }, [initialSelectedKey]);
+
+  // Initial load only if initialKeys were not provided by the server
+  useEffect(() => {
+    if (initialKeys && initialKeys.length > 0) return;
 
     let isMounted = true;
     getGpgKeysAction({ cursor: undefined, limit: 8 }).then(async (res) => {
@@ -86,9 +83,7 @@ export function useGpgKeys({
       setKeys(res.keys);
       setNextCursor(res.nextCursor);
 
-      const listed =
-        res.keys.find((key) => key.id === profileKeyId) ??
-        (pageMode === "profile" && !profileKeyId ? res.keys[0] : undefined);
+      const listed = res.keys.find((key) => key.id === profileKeyId);
       const profile =
         listed ?? (profileKeyId ? await getGpgKeyByIdAction(profileKeyId) : null);
       if (!isMounted || !profile) return;
@@ -99,7 +94,32 @@ export function useGpgKeys({
     return () => {
       isMounted = false;
     };
-  }, [pageMode, profileKeyId, initialSelectedKey]);
+  }, [profileKeyId, initialKeys]);
+
+  useEffect(() => {
+    if (!profileKeyId || selectedKey?.id === profileKeyId) return;
+    const found = keys.find((key) => key.id === profileKeyId);
+    if (found) {
+      setSelectedKey(found);
+      onProfileSelectedRef.current?.(found);
+      return;
+    }
+    let cancelled = false;
+    void getGpgKeyByIdAction(profileKeyId).then((profile) => {
+      if (cancelled) return;
+      if (!profile) {
+        if (useSelectedProfileStore.getState().profileKeyId === profileKeyId) {
+          useSelectedProfileStore.getState().setProfileKeyId(null);
+        }
+        return;
+      }
+      setSelectedKey(profile);
+      onProfileSelectedRef.current?.(profile);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [profileKeyId, keys, selectedKey?.id]);
 
   // Infinite Scroll Trigger
   const fetchMoreKeys = useCallback(async () => {
@@ -132,22 +152,19 @@ export function useGpgKeys({
   const handleSelectKey = useCallback(
     (keyId: string) => {
       const profile = keys.find((key) => key.id === keyId);
-      if (profile) {
-        setSelectedKey(profile);
-        onProfileSelectedRef.current?.(profile);
-      }
-      const targetUrl =
-        pageMode === "profile" ? `/profile?key=${keyId}` : `/?key=${keyId}`;
-      router.push(targetUrl);
+      if (!profile) return;
+      useSelectedProfileStore.getState().setProfileKeyId(profile.id);
+      setSelectedKey(profile);
+      onProfileSelectedRef.current?.(profile);
     },
-    [keys, pageMode, router],
+    [keys],
   );
 
   const handleBackToProfiles = useCallback(() => {
+    useSelectedProfileStore.getState().setProfileKeyId(null);
     setSelectedKey(null);
     onClearProfileRef.current?.();
-    router.push(pageMode === "profile" ? "/profile" : "/");
-  }, [pageMode, router]);
+  }, []);
 
   function swapKeys(keyId: string, direction: -1 | 1) {
     setKeys((current) => {
@@ -216,7 +233,7 @@ export function useGpgKeys({
 
   async function confirmDeleteRequest(callbacks?: {
     onDeleteKey?: (id: string) => void;
-    onDeleteContact?: (id: string) => void;
+    onDeleteContact?: (id: string) => void | Promise<boolean>;
   }) {
     if (!deleteRequest) return;
     if (deleteRequest.type === "key" && deleteRequest.step === 1) {
@@ -227,19 +244,21 @@ export function useGpgKeys({
     if (deleteRequest.type === "key") {
       const result = await deleteGpgKeyAction(deleteRequest.id);
       if (!result.success) {
-        setUiError(result.error ?? "No se pudo eliminar el perfil.");
+        setUiError(result.error ?? "Could not delete profile.");
       } else {
         const deletedId = deleteRequest.id;
         setKeys((prev) => prev.filter((key) => key.id !== deletedId));
         if (selectedKey?.id === deletedId) {
+          useSelectedProfileStore.getState().setProfileKeyId(null);
           setSelectedKey(null);
           if (onClearProfile) onClearProfile();
         }
         if (callbacks?.onDeleteKey) callbacks.onDeleteKey(deletedId);
       }
-    } else {
-      if (callbacks?.onDeleteContact) {
-        callbacks.onDeleteContact(deleteRequest.id);
+    } else if (callbacks?.onDeleteContact) {
+      const deleted = await callbacks.onDeleteContact(deleteRequest.id);
+      if (deleted === false) {
+        setUiError("Could not delete contact.");
       }
     }
     setDeleteRequest(null);

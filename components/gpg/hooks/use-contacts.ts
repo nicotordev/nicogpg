@@ -2,10 +2,18 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { GpgKeyDto } from "@/app/actions/gpg.actions";
+import {
+  appendMessageAction,
+  createContactAction,
+  deleteContactAction,
+  listContactsAction,
+  listMessagesAction,
+} from "@/app/actions/chat.actions";
 import { parseArmoredGpgKey, encryptMessageForRecipient } from "@/lib/gpg-crypto";
-import { encryptStorageData, decryptStorageData } from "@/lib/secure-storage";
-import type { Contact } from "../types";
-import { contactKind } from "../types";
+import { decryptStorageData } from "@/lib/secure-storage";
+import { contactKind, type ChatMessage, type Contact, type ContactKind } from "../types";
+
+const CONTACT_STORAGE_KEY = "nicogpg.contacts";
 
 function extractArmoredPgpMessage(text: string): string | null {
   return (
@@ -15,91 +23,191 @@ function extractArmoredPgpMessage(text: string): string | null {
   );
 }
 
+function isContactKind(value: string): value is ContactKind {
+  return value === "keyed" || value === "local" || value === "self";
+}
+
+function readStoredContacts(payload: string): Array<{
+  name: string;
+  kind: ContactKind;
+  fingerprint: string;
+  publicKey: string;
+}> {
+  try {
+    const parsed: unknown = JSON.parse(payload);
+    if (!Array.isArray(parsed)) return [];
+    const contacts: Array<{
+      name: string;
+      kind: ContactKind;
+      fingerprint: string;
+      publicKey: string;
+    }> = [];
+    for (const item of parsed) {
+      if (typeof item !== "object" || item === null) continue;
+      const record = item as Record<string, unknown>;
+      if (typeof record.name !== "string" || !record.name.trim()) continue;
+      const publicKey = typeof record.publicKey === "string" ? record.publicKey : "";
+      const fingerprint = typeof record.fingerprint === "string" ? record.fingerprint : "";
+      const kindValue = typeof record.kind === "string" ? record.kind : "";
+      const kind = isContactKind(kindValue)
+        ? kindValue
+        : publicKey.trim()
+          ? "keyed"
+          : "local";
+      contacts.push({
+        name: record.name.trim(),
+        kind,
+        fingerprint,
+        publicKey,
+      });
+    }
+    return contacts;
+  } catch {
+    return [];
+  }
+}
+
 export function useContacts() {
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [messagesByContact, setMessagesByContact] = useState<
+    Record<string, ChatMessage[]>
+  >({});
+  const [contactsReady, setContactsReady] = useState(false);
+  const [loadingContactId, setLoadingContactId] = useState("");
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
   const [contactName, setContactName] = useState("");
   const [contactKeyText, setContactKeyText] = useState("");
   const [contactError, setContactError] = useState<string | null>(null);
   const [selectedContactId, setSelectedContactId] = useState("");
   const [messageToContact, setMessageToContact] = useState("");
-  const [encryptedMessage, setEncryptedMessage] = useState("");
-  const [sentPlaintext, setSentPlaintext] = useState("");
-  const [showingDecrypted, setShowingDecrypted] = useState(false);
   const [isEncryptingMessage, setIsEncryptingMessage] = useState(false);
 
-  // Load encrypted contacts from localStorage on mount
+  const loadMessages = useCallback(async (contactId: string) => {
+    setLoadingContactId(contactId);
+    const result = await listMessagesAction(contactId);
+    setLoadingContactId((current) => (current === contactId ? "" : current));
+    if (!result.ok) {
+      setContactError(result.error);
+      return;
+    }
+    setMessagesByContact((current) => {
+      const previous = current[contactId] ?? [];
+      const revealed = new Map(
+        previous.flatMap((message) =>
+          message.revealedText ? [[message.id, message.revealedText] as const] : [],
+        ),
+      );
+      return {
+        ...current,
+        [contactId]: result.messages.map((message) => {
+          const revealedText = revealed.get(message.id);
+          return revealedText ? { ...message, revealedText } : message;
+        }),
+      };
+    });
+    setContacts((current) =>
+      current.map((contact) =>
+        contact.id === contactId
+          ? { ...contact, hasMessages: result.messages.length > 0 }
+          : contact,
+      ),
+    );
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
-    if (typeof window !== "undefined") {
-      const stored = window.localStorage.getItem("nicogpg.contacts");
-      if (stored) {
-        decryptStorageData(stored).then((decrypted) => {
-          if (isMounted && decrypted) {
-            try {
-              setContacts(JSON.parse(decrypted) as Contact[]);
-            } catch {
-              // Ignore corrupted payload
-            }
-          }
-        });
+
+    async function load() {
+      const result = await listContactsAction();
+      if (!isMounted) return;
+      if (!result.ok) {
+        setContactError(result.error);
+        setContactsReady(true);
+        return;
       }
+
+      let next: Contact[] = result.contacts;
+      if (typeof window !== "undefined") {
+        const stored = window.localStorage.getItem(CONTACT_STORAGE_KEY);
+        if (stored) {
+          const decrypted = await decryptStorageData(stored);
+          const localContacts = decrypted ? readStoredContacts(decrypted) : [];
+          if (localContacts.length > 0 && next.length === 0) {
+            const imported: Contact[] = [];
+            for (const contact of localContacts) {
+              const created = await createContactAction(contact);
+              if (created.ok) imported.push(created.contact);
+            }
+            if (imported.length > 0) next = imported;
+          }
+          window.localStorage.removeItem(CONTACT_STORAGE_KEY);
+        }
+      }
+
+      if (!isMounted) return;
+      setContacts(next);
+      setContactsReady(true);
     }
+
+    void load();
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // Save contacts encrypted with AES-256-GCM
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      encryptStorageData(JSON.stringify(contacts)).then((encrypted) => {
-        window.localStorage.setItem("nicogpg.contacts", encrypted);
-      });
-    }
-  }, [contacts]);
+  const selectContact = useCallback(
+    (contactId: string) => {
+      setSelectedContactId(contactId);
+      setMessageToContact("");
+      setContactError(null);
+      void loadMessages(contactId);
+    },
+    [loadMessages],
+  );
 
   const rememberContact = useCallback((contact: Contact) => {
-    setContacts((current) => [contact, ...current]);
+    setContacts((current) => {
+      const without = current.filter((item) => item.id !== contact.id);
+      return [contact, ...without];
+    });
     setSelectedContactId(contact.id);
     setContactName("");
     setContactKeyText("");
     setContactError(null);
     setMessageToContact("");
-    setEncryptedMessage("");
-    setSentPlaintext("");
-    setShowingDecrypted(false);
     setIsContactDialogOpen(false);
-  }, []);
-
-  const selectContact = useCallback((contactId: string) => {
-    setSelectedContactId(contactId);
-    setMessageToContact("");
-    setEncryptedMessage("");
-    setSentPlaintext("");
-    setShowingDecrypted(false);
-    setContactError(null);
+    setMessagesByContact((current) =>
+      current[contact.id] ? current : { ...current, [contact.id]: [] },
+    );
   }, []);
 
   const removeContact = useCallback(
-    (contactId: string) => {
-      setContacts((current) => current.filter((c) => c.id !== contactId));
+    async (contactId: string): Promise<boolean> => {
+      const result = await deleteContactAction(contactId);
+      if (!result.ok) {
+        setContactError(result.error);
+        return false;
+      }
+      setContacts((current) => current.filter((contact) => contact.id !== contactId));
+      setMessagesByContact((current) => {
+        const next = { ...current };
+        delete next[contactId];
+        return next;
+      });
       if (selectedContactId === contactId) {
         setSelectedContactId("");
         setMessageToContact("");
-        setEncryptedMessage("");
-        setSentPlaintext("");
-        setShowingDecrypted(false);
       }
+      return true;
     },
     [selectedContactId],
   );
 
   const handleCreateSelfChat = useCallback(
-    (selectedKey: GpgKeyDto | null, fallbackKey?: GpgKeyDto | null) => {
+    async (selectedKey: GpgKeyDto | null, fallbackKey?: GpgKeyDto | null) => {
       const key = selectedKey ?? fallbackKey;
       if (!key) {
-        setContactError("Selecciona una identidad de perfil primero.");
+        setContactError("Select a profile identity first.");
         setIsContactDialogOpen(true);
         return;
       }
@@ -108,6 +216,7 @@ export function useContacts() {
         (contact) =>
           contactKind(contact) === "self" &&
           ((key.fingerprint && contact.fingerprint === key.fingerprint) ||
+            contact.name === `Me · ${key.handle}` ||
             contact.name === `Yo · ${key.handle}`),
       );
       if (existing) {
@@ -117,15 +226,20 @@ export function useContacts() {
         return;
       }
 
-      rememberContact({
-        id: crypto.randomUUID(),
-        name: `Yo · ${key.handle}`,
+      const created = await createContactAction({
+        name: `Me · ${key.handle}`,
         kind: "self",
         fingerprint: key.fingerprint || "",
         publicKey: key.publicKey || "",
       });
+      if (!created.ok) {
+        setContactError(created.error);
+        return;
+      }
+      rememberContact(created.contact);
+      void loadMessages(created.contact.id);
     },
-    [contacts, selectContact, rememberContact],
+    [contacts, selectContact, rememberContact, loadMessages],
   );
 
   const handleAddContact = useCallback(
@@ -135,39 +249,38 @@ export function useContacts() {
 
       const name = contactName.trim();
       if (!name) {
-        setContactError("Ingresa un nombre.");
+        setContactError("Enter a name.");
         return;
       }
 
       if (mode === "local") {
-        rememberContact({
-          id: crypto.randomUUID(),
-          name,
-          kind: "local",
-          fingerprint: "",
-          publicKey: "",
-        });
+        const created = await createContactAction({ name, kind: "local" });
+        if (!created.ok) {
+          setContactError(created.error);
+          return;
+        }
+        rememberContact(created.contact);
         return;
       }
 
       const keyText = contactKeyText.trim();
       if (!keyText) {
-        setContactError("Pega la clave pública o crea el chat sin clave.");
+        setContactError("Paste the public key or create a keyless chat.");
         return;
       }
       if (keyText.includes("BEGIN PGP MESSAGE")) {
         setContactError(
-          "Eso es un mensaje cifrado, no una clave. Usa “Sin clave” o “Chatear conmigo”.",
+          "That is an encrypted message, not a key. Use \"Keyless\" or \"Note to self\".",
         );
         return;
       }
       if (keyText.includes("BEGIN PGP PRIVATE KEY BLOCK")) {
-        setContactError("Esa es una clave privada. Pega solo la clave pública.");
+        setContactError("That is a private key. Paste only the public key.");
         return;
       }
       if (!keyText.includes("BEGIN PGP PUBLIC KEY BLOCK")) {
         setContactError(
-          "Pega un bloque que empiece con -----BEGIN PGP PUBLIC KEY BLOCK-----.",
+          "Paste a block starting with -----BEGIN PGP PUBLIC KEY BLOCK-----.",
         );
         return;
       }
@@ -175,20 +288,24 @@ export function useContacts() {
       try {
         const parsed = await parseArmoredGpgKey(keyText);
         if (parsed.isPrivateKey) {
-          setContactError("Esa es una clave privada. Pega solo la clave pública.");
+          setContactError("That is a private key. Paste only the public key.");
           return;
         }
 
-        rememberContact({
-          id: crypto.randomUUID(),
+        const created = await createContactAction({
           name,
           kind: "keyed",
           fingerprint: parsed.fingerprint,
           publicKey: parsed.publicKeyArmored,
         });
+        if (!created.ok) {
+          setContactError(created.error);
+          return;
+        }
+        rememberContact(created.contact);
       } catch (error: unknown) {
         console.error("Contact key parse error:", error);
-        setContactError("La clave pública no es válida.");
+        setContactError("The public key is not valid.");
       }
     },
     [contactName, contactKeyText, rememberContact],
@@ -205,47 +322,38 @@ export function useContacts() {
       setIsEncryptingMessage(true);
       setContactError(null);
       const plaintext = messageToContact.trim();
+      const thread = messagesByContact[selectedContactId] ?? [];
+      const latestCiphertext = [...thread]
+        .reverse()
+        .find((message) => message.ciphertext.includes("BEGIN PGP MESSAGE"))
+        ?.ciphertext;
 
-      if (/^\/descifrar\b/i.test(plaintext)) {
-        const armored =
-          extractArmoredPgpMessage(plaintext) ??
-          (encryptedMessage.includes("BEGIN PGP MESSAGE")
-            ? encryptedMessage
-            : null);
+      if (/^\/(?:descifrar|decrypt)\b/i.test(plaintext)) {
+        const armored = extractArmoredPgpMessage(plaintext) ?? latestCiphertext ?? null;
         setMessageToContact("");
         if (!armored) {
-          setContactError("Pega el mensaje cifrado después de /descifrar.");
+          setContactError("Paste the encrypted message after /decrypt.");
           setIsEncryptingMessage(false);
           return;
         }
         if (!selectedKey?.encryptedPrivateKey) {
-          setContactError("Este perfil no tiene una clave privada.");
+          setContactError("This profile does not have a private key.");
           setIsEncryptingMessage(false);
           return;
         }
-        if (onPendingDecrypt) {
-          onPendingDecrypt(armored);
-        }
+        if (onPendingDecrypt) onPendingDecrypt(armored);
         setIsEncryptingMessage(false);
         return;
       }
 
-      setEncryptedMessage("");
-      setSentPlaintext("");
-      setShowingDecrypted(false);
-
       try {
-        if (contactKind(contact) === "local") {
-          setSentPlaintext(plaintext);
-          setMessageToContact("");
-          return;
-        }
-
         const publicKeyArmored =
           contact.publicKey ||
-          (contactKind(contact) === "self" ? selectedKey?.publicKey ?? "" : "");
+          (contactKind(contact) === "local" || contactKind(contact) === "self"
+            ? selectedKey?.publicKey ?? ""
+            : "");
         if (!publicKeyArmored) {
-          setContactError("Este chat no tiene una clave para cifrar.");
+          setContactError("This chat does not have an encryption key.");
           return;
         }
 
@@ -253,27 +361,84 @@ export function useContacts() {
           publicKeyArmored,
           messageText: plaintext,
         });
-        setEncryptedMessage(encrypted);
+        const saved = await appendMessageAction({
+          contactId: contact.id,
+          ciphertext: encrypted,
+          ...(selectedKey?.id ? { ownerKeyId: selectedKey.id } : {}),
+        });
+        if (!saved.ok) {
+          setContactError(saved.error);
+          return;
+        }
+
+        setMessagesByContact((current) => ({
+          ...current,
+          [contact.id]: [...(current[contact.id] ?? []), saved.message],
+        }));
+        setContacts((current) =>
+          current.map((item) =>
+            item.id === contact.id ? { ...item, hasMessages: true } : item,
+          ),
+        );
         setMessageToContact("");
       } catch (error: unknown) {
         console.error("Encrypt message error:", error);
-        setContactError("No se pudo cifrar el mensaje.");
+        setContactError("Could not encrypt message.");
       } finally {
         setIsEncryptingMessage(false);
       }
     },
-    [
-      contacts,
-      selectedContactId,
-      messageToContact,
-      isEncryptingMessage,
-      encryptedMessage,
-    ],
+    [contacts, selectedContactId, messageToContact, isEncryptingMessage, messagesByContact],
   );
+
+  const revealDecryptedMessage = useCallback((armored: string, plaintext: string) => {
+    const normalized = armored.trim();
+    setMessagesByContact((current) => {
+      let matched = false;
+      const next: Record<string, ChatMessage[]> = {};
+      for (const [contactId, list] of Object.entries(current)) {
+        let index = -1;
+        for (let cursor = list.length - 1; cursor >= 0; cursor -= 1) {
+          const message = list[cursor];
+          if (message && message.ciphertext.trim() === normalized) {
+            index = cursor;
+            break;
+          }
+        }
+        if (index < 0) {
+          next[contactId] = list;
+          continue;
+        }
+        matched = true;
+        const copy = list.slice();
+        const target = copy[index];
+        if (target) copy[index] = { ...target, revealedText: plaintext };
+        next[contactId] = copy;
+      }
+      if (!matched && selectedContactId) {
+        const list = next[selectedContactId] ?? [];
+        next[selectedContactId] = [
+          ...list,
+          {
+            id: `revealed-${crypto.randomUUID()}`,
+            ciphertext: normalized,
+            createdAt: new Date().toISOString(),
+            revealedText: plaintext,
+          },
+        ];
+      }
+      return next;
+    });
+  }, [selectedContactId]);
+
+  const selectedMessages = messagesByContact[selectedContactId] ?? [];
 
   return {
     contacts,
-    setContacts,
+    contactsReady,
+    messagesByContact,
+    selectedMessages,
+    loadingMessages: loadingContactId === selectedContactId && loadingContactId !== "",
     isContactDialogOpen,
     setIsContactDialogOpen,
     contactName,
@@ -286,12 +451,6 @@ export function useContacts() {
     setSelectedContactId,
     messageToContact,
     setMessageToContact,
-    encryptedMessage,
-    setEncryptedMessage,
-    sentPlaintext,
-    setSentPlaintext,
-    showingDecrypted,
-    setShowingDecrypted,
     isEncryptingMessage,
     selectContact,
     rememberContact,
@@ -299,5 +458,6 @@ export function useContacts() {
     handleCreateSelfChat,
     handleAddContact,
     handleEncryptMessage,
+    revealDecryptedMessage,
   };
 }

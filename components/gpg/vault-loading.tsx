@@ -1,12 +1,12 @@
 import { Shield, Plus } from "lucide-react";
 
-export default function HomeLoading() {
+export function VaultLoading() {
   return (
     <div
       role="status"
       aria-busy="true"
       aria-live="polite"
-      className="relative min-h-screen w-full bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-red-500 selection:text-white"
+      className="relative flex h-dvh w-full flex-col overflow-hidden bg-slate-950 font-sans text-slate-100 selection:bg-red-500 selection:text-white"
     >
       {/* Top Header Skeleton */}
       <header className="sticky top-0 z-40 w-full border-b border-white/6 bg-slate-950/85 px-3 py-3 backdrop-blur-xl sm:px-6 sm:py-4">
