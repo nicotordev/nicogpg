@@ -14,10 +14,10 @@ export function AuthScreen({
   title,
   description,
   backHref = "/",
-  backLabel = "Volver",
+  backLabel = "Back",
 }: AuthScreenProps) {
   return (
-    <main lang="es" className="fixed inset-0 overflow-y-auto bg-background">
+    <main lang="en" className="fixed inset-0 overflow-y-auto bg-background">
       <div className="mx-auto flex min-h-full w-full max-w-md flex-col px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))]">
         <header className="flex min-h-12 items-center">
           <Link
@@ -33,7 +33,9 @@ export function AuthScreen({
           <div className="mb-8 space-y-2">
             <p className="text-sm font-semibold tracking-wide text-primary">nicogpg</p>
             <h1 className="font-heading text-3xl font-semibold tracking-tight">{title}</h1>
-            <p className="max-w-sm text-sm leading-6 text-muted-foreground">{description}</p>
+            {description ? (
+              <p className="max-w-sm text-sm leading-6 text-muted-foreground">{description}</p>
+            ) : null}
           </div>
           {children}
         </section>

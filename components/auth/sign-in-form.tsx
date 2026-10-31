@@ -31,7 +31,11 @@ import { cn } from "@/lib/utils";
 
 type AuthMethod = "otp" | "magic-link" | "password";
 
-export function SignInForm() {
+type SignInFormProps = {
+  onOtpVerifyChange?: (visible: boolean) => void;
+};
+
+export function SignInForm({ onOtpVerifyChange }: SignInFormProps) {
   const router = useRouter();
 
   // Authentication method tab
@@ -57,6 +61,8 @@ export function SignInForm() {
   const [error, setError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
+  const showingOtpVerify = method === "otp" && otpStep === "verify";
+
   // Countdown timer effect
   useEffect(() => {
     if (countdown <= 0) return;
@@ -66,6 +72,10 @@ export function SignInForm() {
     return () => window.clearInterval(interval);
   }, [countdown]);
 
+  useEffect(() => {
+    onOtpVerifyChange?.(showingOtpVerify);
+  }, [onOtpVerifyChange, showingOtpVerify]);
+
   // Handle Passkey Login
   async function signInWithPasskey() {
     if (pending || passkeyPending) return;
@@ -73,7 +83,7 @@ export function SignInForm() {
     setInfoMessage(null);
 
     if (!window.PublicKeyCredential || !window.isSecureContext) {
-      setError("Este navegador no admite passkeys. Usa un código OTP, link de acceso o tu contraseña.");
+      setError("This browser does not support passkeys. Use an OTP code, magic link, or your password.");
       return;
     }
 
@@ -81,13 +91,13 @@ export function SignInForm() {
     try {
       const result = await authClient.signIn.passkey();
       if (result.error) {
-        setError("No se pudo iniciar sesión con tu passkey. Inténtalo de nuevo o usa otro método.");
+        setError("Could not sign in with your passkey. Please try again or use another method.");
         return;
       }
       router.replace("/");
       router.refresh();
     } catch {
-      setError("No se completó el acceso con passkey. Puedes volver a intentarlo.");
+      setError("Passkey sign-in could not be completed. You can try again.");
     } finally {
       setPasskeyPending(false);
     }
@@ -101,7 +111,7 @@ export function SignInForm() {
 
     const trimmed = identifier.trim();
     if (!trimmed) {
-      setError("Ingresa tu correo electrónico o nombre de usuario.");
+      setError("Please enter your email address or username.");
       return;
     }
 
@@ -109,7 +119,7 @@ export function SignInForm() {
     try {
       const resolved = await resolveEmailFromIdentifier(trimmed);
       if (!resolved.success || !resolved.email) {
-        setError(resolved.error || "No encontramos ninguna cuenta asociada a este usuario o correo.");
+        setError(resolved.error || "No account found associated with this user or email.");
         return;
       }
 
@@ -123,9 +133,9 @@ export function SignInForm() {
 
       if (result.error) {
         if (result.error.status === 429) {
-          setError("Demasiados intentos. Espera unos minutos antes de solicitar otro código.");
+          setError("Too many attempts. Please wait a few minutes before requesting another code.");
         } else {
-          setError("No pudimos enviar el código. Verifica tus datos o inténtalo más tarde.");
+          setError("Could not send the code. Please verify your info or try again later.");
         }
         return;
       }
@@ -133,9 +143,9 @@ export function SignInForm() {
       setOtpStep("verify");
       setOtpCode("");
       setCountdown(45);
-      setInfoMessage(`Código enviado a ${email}`);
+      setInfoMessage(`Code sent to ${email}`);
     } catch {
-      setError("No pudimos conectar con el servidor. Inténtalo de nuevo.");
+      setError("Could not connect to the server. Please try again.");
     } finally {
       setPending(false);
     }
@@ -146,7 +156,7 @@ export function SignInForm() {
     if (pending) return;
     const code = (codeToVerify ?? otpCode).trim();
     if (!resolvedEmail || code.length !== 6) {
-      setError("Ingresa los 6 dígitos del código de acceso.");
+      setError("Please enter the 6-digit access code.");
       return;
     }
 
@@ -162,9 +172,9 @@ export function SignInForm() {
 
       if (result.error) {
         if (result.error.status === 429) {
-          setError("Demasiados intentos erróneos. Espera un momento y vuelve a intentarlo.");
+          setError("Too many incorrect attempts. Please wait a moment and try again.");
         } else {
-          setError("El código es incorrecto o ha caducado. Solicita uno nuevo si es necesario.");
+          setError("The code is incorrect or expired. Please request a new one if needed.");
         }
         return;
       }
@@ -172,7 +182,7 @@ export function SignInForm() {
       router.replace("/");
       router.refresh();
     } catch {
-      setError("No pudimos conectar con el servidor. Inténtalo de nuevo.");
+      setError("Could not connect to the server. Please try again.");
     } finally {
       setPending(false);
     }
@@ -186,7 +196,7 @@ export function SignInForm() {
 
     const trimmed = identifier.trim();
     if (!trimmed) {
-      setError("Ingresa tu correo electrónico o nombre de usuario.");
+      setError("Please enter your email address or username.");
       return;
     }
 
@@ -194,7 +204,7 @@ export function SignInForm() {
     try {
       const resolved = await resolveEmailFromIdentifier(trimmed);
       if (!resolved.success || !resolved.email) {
-        setError(resolved.error || "No encontramos ninguna cuenta asociada a este usuario o correo.");
+        setError(resolved.error || "No account found associated with this user or email.");
         return;
       }
 
@@ -208,9 +218,9 @@ export function SignInForm() {
 
       if (result.error) {
         if (result.error.status === 429) {
-          setError("Demasiados intentos. Espera unos momentos antes de solicitar otro enlace.");
+          setError("Too many attempts. Please wait a few moments before requesting another link.");
         } else {
-          setError("No pudimos enviar el link de acceso. Inténtalo de nuevo.");
+          setError("Could not send the access link. Please try again.");
         }
         return;
       }
@@ -218,7 +228,7 @@ export function SignInForm() {
       setMagicLinkSent(true);
       setCountdown(45);
     } catch {
-      setError("No pudimos conectar con el servidor. Inténtalo de nuevo.");
+      setError("Could not connect to the server. Please try again.");
     } finally {
       setPending(false);
     }
@@ -233,11 +243,11 @@ export function SignInForm() {
 
     const trimmedIdentifier = identifier.trim();
     if (!trimmedIdentifier) {
-      setError("Ingresa tu correo electrónico o nombre de usuario.");
+      setError("Please enter your email address or username.");
       return;
     }
     if (!password) {
-      setError("Ingresa tu contraseña.");
+      setError("Please enter your password.");
       return;
     }
 
@@ -245,7 +255,7 @@ export function SignInForm() {
     try {
       const resolved = await resolveEmailFromIdentifier(trimmedIdentifier);
       if (!resolved.success || !resolved.email) {
-        setError(resolved.error || "No encontramos ninguna cuenta asociada a este usuario o correo.");
+        setError(resolved.error || "No account found associated with this user or email.");
         return;
       }
 
@@ -256,11 +266,11 @@ export function SignInForm() {
 
       if (result.error) {
         if (result.error.status === 429) {
-          setError("Demasiados intentos. Espera un momento y vuelve a intentarlo.");
+          setError("Too many attempts. Please wait a moment and try again.");
         } else if (result.error.status === 403) {
-          setError("Tu email aún no está verificado. Revisa tu bandeja de entrada para activar tu cuenta.");
+          setError("Your email is not verified yet. Please check your inbox to activate your account.");
         } else {
-          setError("No pudimos iniciar sesión. Revisa tu correo/usuario y contraseña e inténtalo de nuevo.");
+          setError("Could not sign in. Please verify your credentials and try again.");
         }
         return;
       }
@@ -268,7 +278,7 @@ export function SignInForm() {
       router.replace("/");
       router.refresh();
     } catch {
-      setError("No pudimos conectar con el servidor. Inténtalo de nuevo.");
+      setError("Could not connect to the server. Please try again.");
     } finally {
       setPending(false);
     }
@@ -279,6 +289,7 @@ export function SignInForm() {
   return (
     <div className="space-y-6 pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-0" aria-busy={isGlobalPending}>
       {/* Method Tabs */}
+      {showingOtpVerify ? null : (
       <div className="grid grid-cols-3 gap-1 rounded-2xl bg-muted/60 p-1 text-xs font-medium">
         <button
           type="button"
@@ -296,7 +307,7 @@ export function SignInForm() {
           )}
         >
           <ShieldCheck aria-hidden="true" className="size-3.5 shrink-0" />
-          <span>Código OTP</span>
+          <span>OTP Code</span>
         </button>
 
         <button
@@ -315,7 +326,7 @@ export function SignInForm() {
           )}
         >
           <Sparkles aria-hidden="true" className="size-3.5 shrink-0" />
-          <span>Link de entrar</span>
+          <span>Magic Link</span>
         </button>
 
         <button
@@ -334,9 +345,10 @@ export function SignInForm() {
           )}
         >
           <KeyRound aria-hidden="true" className="size-3.5 shrink-0" />
-          <span>Contraseña</span>
+          <span>Password</span>
         </button>
       </div>
+      )}
 
       {/* Error alert */}
       {error && (
@@ -349,7 +361,7 @@ export function SignInForm() {
       )}
 
       {/* Informative message */}
-      {infoMessage && !error && (
+      {infoMessage && !error && !showingOtpVerify && (
         <div
           role="status"
           className="rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary"
@@ -364,7 +376,7 @@ export function SignInForm() {
           {otpStep === "request" ? (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="otp-identifier">Nombre de usuario o correo</Label>
+                <Label htmlFor="otp-identifier">Username or email</Label>
                 <div className="relative">
                   <UserRound
                     aria-hidden="true"
@@ -374,7 +386,7 @@ export function SignInForm() {
                     id="otp-identifier"
                     type="text"
                     autoComplete="username email"
-                    placeholder="ej. nicotordev o tu@email.com"
+                    placeholder="e.g. username or you@email.com"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     disabled={isGlobalPending}
@@ -388,7 +400,7 @@ export function SignInForm() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Te enviaremos un código temporal de 6 dígitos a tu correo registrado.
+                  We will send a 6-digit temporary code to your registered email.
                 </p>
               </div>
 
@@ -402,7 +414,7 @@ export function SignInForm() {
                     onClick={handleSendOtp}
                   >
                     {pending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : <Send aria-hidden="true" />}
-                    {pending ? "Enviando código…" : "Enviar código OTP"}
+                    {pending ? "Sending code…" : "Send OTP code"}
                   </Button>
                   <Button
                     type="button"
@@ -413,7 +425,7 @@ export function SignInForm() {
                     onClick={signInWithPasskey}
                   >
                     {passkeyPending && <LoaderCircle aria-hidden="true" className="animate-spin" />}
-                    {passkeyPending ? "Esperando tu passkey…" : "Iniciar sesión con passkey"}
+                    {passkeyPending ? "Waiting for passkey…" : "Sign in with passkey"}
                   </Button>
                 </div>
               </div>
@@ -421,14 +433,16 @@ export function SignInForm() {
           ) : (
             <div className="space-y-6">
               <div className="space-y-2 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Ingresa el código de 6 dígitos que enviamos a:
+                <p id="otp-sent-label" className="text-sm text-muted-foreground">
+                  Enter the 6-digit code sent to:
                 </p>
-                <p className="text-sm font-semibold break-all text-foreground">{resolvedEmail}</p>
+                <p id="otp-sent-email" className="text-sm font-semibold break-all text-foreground">{resolvedEmail}</p>
               </div>
 
               <div className="flex justify-center py-2">
                 <InputOTP
+                  id="otp-code"
+                  aria-labelledby="otp-sent-label otp-sent-email"
                   maxLength={6}
                   value={otpCode}
                   onChange={(val) => {
@@ -463,7 +477,7 @@ export function SignInForm() {
                   className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
                 >
                   <ArrowLeft aria-hidden="true" className="size-4" />
-                  <span>Cambiar correo / usuario</span>
+                  <span>Change email / username</span>
                 </button>
 
                 <button
@@ -473,7 +487,7 @@ export function SignInForm() {
                   className="flex items-center gap-1.5 font-medium text-primary hover:underline disabled:pointer-events-none disabled:opacity-50"
                 >
                   <RefreshCw aria-hidden="true" className={cn("size-3.5", pending && "animate-spin")} />
-                  <span>{countdown > 0 ? `Reenviar (${countdown}s)` : "Reenviar código"}</span>
+                  <span>{countdown > 0 ? `Resend (${countdown}s)` : "Resend code"}</span>
                 </button>
               </div>
 
@@ -487,7 +501,7 @@ export function SignInForm() {
                     onClick={() => handleVerifyOtp()}
                   >
                     {pending && <LoaderCircle aria-hidden="true" className="animate-spin" />}
-                    {pending ? "Verificando…" : "Verificar y acceder"}
+                    {pending ? "Verifying…" : "Verify and sign in"}
                   </Button>
                 </div>
               </div>
@@ -502,7 +516,7 @@ export function SignInForm() {
           {!magicLinkSent ? (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="magic-identifier">Nombre de usuario o correo</Label>
+                <Label htmlFor="magic-identifier">Username or email</Label>
                 <div className="relative">
                   <Mail
                     aria-hidden="true"
@@ -512,7 +526,7 @@ export function SignInForm() {
                     id="magic-identifier"
                     type="text"
                     autoComplete="username email"
-                    placeholder="ej. nicotordev o tu@email.com"
+                    placeholder="e.g. username or you@email.com"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     disabled={isGlobalPending}
@@ -526,7 +540,7 @@ export function SignInForm() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Te enviaremos un link de acceso directo a tu correo para iniciar sesión en 1 clic.
+                  We will send a direct login link to your email for 1-click access.
                 </p>
               </div>
 
@@ -540,7 +554,7 @@ export function SignInForm() {
                     onClick={handleSendMagicLink}
                   >
                     {pending ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : <Sparkles aria-hidden="true" />}
-                    {pending ? "Enviando link de entrar…" : "Enviar link de entrar"}
+                    {pending ? "Sending login link…" : "Send magic link"}
                   </Button>
                   <Button
                     type="button"
@@ -551,7 +565,7 @@ export function SignInForm() {
                     onClick={signInWithPasskey}
                   >
                     {passkeyPending && <LoaderCircle aria-hidden="true" className="animate-spin" />}
-                    {passkeyPending ? "Esperando tu passkey…" : "Iniciar sesión con passkey"}
+                    {passkeyPending ? "Waiting for passkey…" : "Sign in with passkey"}
                   </Button>
                 </div>
               </div>
@@ -563,11 +577,11 @@ export function SignInForm() {
               </div>
 
               <div className="space-y-2">
-                <h3 className="font-heading text-lg font-semibold">¡Link de entrar enviado!</h3>
+                <h3 className="font-heading text-lg font-semibold">Magic link sent!</h3>
                 <p className="text-sm text-muted-foreground">
-                  Revisa tu bandeja de entrada en{" "}
+                  Check your inbox at{" "}
                   <strong className="break-all text-foreground">{resolvedEmail}</strong>.
-                  Haz clic en el botón de acceso para iniciar sesión automáticamente.
+                  Click the login link to sign in automatically.
                 </p>
               </div>
 
@@ -580,7 +594,7 @@ export function SignInForm() {
                   onClick={handleSendMagicLink}
                 >
                   <RefreshCw aria-hidden="true" className={cn("size-4", pending && "animate-spin")} />
-                  {countdown > 0 ? `Reenviar link (${countdown}s)` : "Reenviar link de entrar"}
+                  {countdown > 0 ? `Resend link (${countdown}s)` : "Resend magic link"}
                 </Button>
 
                 <Button
@@ -593,7 +607,7 @@ export function SignInForm() {
                     setError(null);
                   }}
                 >
-                  Cambiar usuario o correo
+                  Change username or email
                 </Button>
               </div>
             </div>
@@ -605,7 +619,7 @@ export function SignInForm() {
       {method === "password" && (
         <form onSubmit={handlePasswordSubmit} noValidate className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="password-identifier">Nombre de usuario o correo</Label>
+            <Label htmlFor="password-identifier">Username or email</Label>
             <div className="relative">
               <UserRound
                 aria-hidden="true"
@@ -616,7 +630,7 @@ export function SignInForm() {
                 type="text"
                 autoComplete="username email"
                 required
-                placeholder="ej. nicotordev o tu@email.com"
+                placeholder="e.g. username or you@email.com"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 disabled={isGlobalPending}
@@ -626,7 +640,7 @@ export function SignInForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Contraseña</Label>
+            <Label htmlFor="password">Password</Label>
             <div className="relative">
               <KeyRound
                 aria-hidden="true"
@@ -644,7 +658,7 @@ export function SignInForm() {
               />
               <button
                 type="button"
-                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 aria-pressed={showPassword}
                 disabled={isGlobalPending}
                 onClick={() => setShowPassword((prev) => !prev)}
@@ -659,7 +673,7 @@ export function SignInForm() {
             <div className="mx-auto flex w-full max-w-md flex-col gap-2">
               <Button type="submit" size="lg" className="min-h-12 w-full" disabled={isGlobalPending}>
                 {pending && <LoaderCircle aria-hidden="true" className="animate-spin" />}
-                {pending ? "Iniciando sesión…" : "Iniciar sesión con contraseña"}
+                {pending ? "Signing in…" : "Sign in with password"}
               </Button>
               <Button
                 type="button"
@@ -670,7 +684,7 @@ export function SignInForm() {
                 onClick={signInWithPasskey}
               >
                 {passkeyPending && <LoaderCircle aria-hidden="true" className="animate-spin" />}
-                {passkeyPending ? "Esperando tu passkey…" : "Iniciar sesión con passkey"}
+                {passkeyPending ? "Waiting for passkey…" : "Sign in with passkey"}
               </Button>
             </div>
           </div>
