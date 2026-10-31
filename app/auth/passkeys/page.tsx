@@ -6,14 +6,14 @@ import { RegisterPasskey } from "@/components/auth/register-passkey";
 export const metadata: Metadata = {
   title: "Passkeys",
   description:
-    "Registra una passkey para entrar a nicogpg con huella, rostro, PIN o llave de seguridad.",
+    "Register a passkey to access nicogpg with fingerprint, face, PIN, or security key.",
 };
 
 export default function PasskeysPage() {
   return (
-    <AuthScreen title="Tus passkeys" description="Accede con tu huella, rostro, PIN o llave de seguridad.">
+    <AuthScreen title="Your passkeys" description="Sign in with your fingerprint, face, PIN, or security key.">
       <RegisterPasskey />
-      <Link href="/" className="mt-8 block min-h-11 py-3 text-center text-sm underline">Volver al inicio</Link>
+      <Link href="/" className="mt-8 block min-h-11 py-3 text-center text-sm underline">Return home</Link>
     </AuthScreen>
   );
 }

@@ -244,13 +244,13 @@ export function AddKeyDialog({
               {parsedKeyInfo?.isPrivateKey && (
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-slate-300">
-                    Passphrase de la clave privada
+                    Private key passphrase
                   </Label>
                   <div className="relative">
                     <Input
                       type={showImportPassphrase ? "text" : "password"}
                       required
-                      placeholder="Ingresa la passphrase para desbloquearla..."
+                      placeholder="Enter passphrase to unlock..."
                       value={importPassphrase}
                       onChange={(e) => onImportPassphraseChange(e.target.value)}
                       className="bg-slate-950 border-slate-800 pr-10 text-white placeholder:text-slate-600 focus-visible:ring-blue-500/50"
@@ -259,8 +259,8 @@ export function AddKeyDialog({
                       type="button"
                       aria-label={
                         showImportPassphrase
-                          ? "Ocultar passphrase"
-                          : "Mostrar passphrase"
+                          ? "Hide passphrase"
+                          : "Show passphrase"
                       }
                       onClick={onToggleShowImportPassphrase}
                       className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200"
@@ -273,8 +273,7 @@ export function AddKeyDialog({
                     </button>
                   </div>
                   <p className="text-[11px] text-slate-500">
-                    Se valida únicamente en este navegador y nunca se envía al
-                    servidor.
+                    Validated strictly in this browser and never sent to the server.
                   </p>
                 </div>
               )}

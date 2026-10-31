@@ -253,7 +253,7 @@ export async function encryptMessageForRecipient({
     await publicKey.getEncryptionKey();
   } catch {
     throw new Error(
-      "La clave pública no tiene una subclave habilitada para cifrado.",
+      "The public key does not have a subkey enabled for encryption.",
     );
   }
   const message = await openpgp.createMessage({ text: messageText });
@@ -281,7 +281,7 @@ export async function decryptMessageInMemory({
     decryptionKeys: unlockedPrivateKey,
   });
   if (typeof data !== "string") {
-    throw new Error("El mensaje descifrado no es texto.");
+    throw new Error("The decrypted message is not plain text.");
   }
   return data;
 }

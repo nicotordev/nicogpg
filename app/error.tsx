@@ -21,10 +21,10 @@ export default function ErrorPage({ error, retry }: ErrorPageProps) {
         </p>
         <div className="space-y-3">
           <h1 className="font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
-            Algo salió mal
+            Something went wrong
           </h1>
           <p className="mx-auto max-w-md text-muted-foreground">
-            No pudimos cargar esta página. Intenta de nuevo o vuelve al inicio.
+            We couldn&apos;t load this page. Please try again or return home.
           </p>
         </div>
         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -33,13 +33,13 @@ export default function ErrorPage({ error, retry }: ErrorPageProps) {
             onClick={retry}
             className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
           >
-            Intentar de nuevo
+            Try again
           </button>
           <Link
             href="/"
             className="inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            Ir al inicio
+            Go home
           </Link>
         </div>
       </div>

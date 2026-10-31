@@ -17,7 +17,7 @@ export function AuthStatus() {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
         <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-        Cargando sesión…
+        Loading session…
       </div>
     );
   }
@@ -26,10 +26,10 @@ export function AuthStatus() {
     return (
       <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
         <Link href="/auth/sign-in" className={cn(buttonVariants({ size: "lg" }), "min-h-12 flex-1")}>
-          Iniciar sesión
+          Sign in
         </Link>
         <Link href="/auth/sign-up" className={cn(buttonVariants({ size: "lg", variant: "outline" }), "min-h-12 flex-1")}>
-          Crear cuenta
+          Create account
         </Link>
       </div>
     );
@@ -53,13 +53,13 @@ export function AuthStatus() {
       });
 
       if (result.error) {
-        setVerificationError("No pudimos reenviar el email. Espera un momento e inténtalo de nuevo.");
+        setVerificationError("Could not resend the email. Please wait a moment and try again.");
         return;
       }
 
-      setVerificationMessage("Te enviamos un nuevo enlace de verificación.");
+      setVerificationMessage("A new verification link has been sent to your email.");
     } catch {
-      setVerificationError("No pudimos conectar con el servidor. Inténtalo de nuevo.");
+      setVerificationError("Could not connect to the server. Please try again.");
     } finally {
       setResending(false);
     }
@@ -70,15 +70,15 @@ export function AuthStatus() {
       {!session.user.emailVerified && (
         <div className="space-y-4 rounded-3xl border border-primary/30 bg-primary/5 p-5">
           <div>
-            <p className="font-medium">Verifica tu email</p>
+            <p className="font-medium">Verify your email</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Revisa tu bandeja de entrada para confirmar {session.user.email}. Puedes usar la aplicación mientras tanto.
+              Check your inbox to confirm {session.user.email}. You can continue using the app in the meantime.
             </p>
           </div>
           {verificationMessage && <p role="status" className="text-sm text-primary">{verificationMessage}</p>}
           {verificationError && <p role="alert" className="text-sm text-destructive">{verificationError}</p>}
           <Button type="button" variant="outline" onClick={resendVerificationEmail} disabled={resending}>
-            {resending ? "Reenviando…" : "Reenviar email de verificación"}
+            {resending ? "Resending…" : "Resend verification email"}
           </Button>
         </div>
       )}

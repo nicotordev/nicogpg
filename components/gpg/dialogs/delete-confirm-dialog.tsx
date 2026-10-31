@@ -32,28 +32,28 @@ export function DeleteConfirmDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="text-white">
             {deleteRequest?.step === 2
-              ? "Confirmación final"
+              ? "Final confirmation"
               : deleteRequest?.type === "key"
-                ? "Eliminar perfil GPG"
-                : "Eliminar contacto"}
+                ? "Delete GPG profile"
+                : "Delete contact"}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-slate-400">
             {deleteRequest?.step === 2
-              ? `Se eliminará permanentemente "${deleteRequest.name}" y su clave GPG. Esta acción no se puede deshacer.`
+              ? `"${deleteRequest.name}" and its GPG key will be permanently deleted. This action cannot be undone.`
               : deleteRequest?.type === "key"
-                ? `¿Quieres eliminar el perfil "${deleteRequest.name}"? Deberás confirmar una segunda vez.`
-                : `¿Quieres eliminar el contacto "${deleteRequest?.name}"?`}
+                ? `Are you sure you want to delete profile "${deleteRequest.name}"? You will be asked to confirm once more.`
+                : `Are you sure you want to delete contact "${deleteRequest?.name}"?`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className="bg-red-600 text-white hover:bg-red-700"
           >
             {deleteRequest?.step === 2
-              ? "Eliminar permanentemente"
-              : "Continuar"}
+              ? "Delete permanently"
+              : "Continue"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

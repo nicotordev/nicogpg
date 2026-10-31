@@ -29,10 +29,10 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       await sendVerificationEmail({
         email: user.email,
-        subject: "Verifica tu email en nicogpg",
-        title: "Verifica tu email",
-        text: "Confirma tu dirección de email para activar tu cuenta en nicogpg.",
-        actionLabel: "Verificar email",
+        subject: "Verify your email on nicogpg",
+        title: "Verify your email",
+        text: "Confirm your email address to activate your account on nicogpg.",
+        actionLabel: "Verify email",
         actionUrl: url,
       });
     },
@@ -41,13 +41,13 @@ export const auth = betterAuth({
     emailOTP({
       sendVerificationOTP: async ({ email, otp, type }) => {
         const subject = type === "sign-in"
-          ? "Tu código de acceso de nicogpg"
-          : "Tu código de verificación de nicogpg";
+          ? "Your nicogpg login code"
+          : "Your nicogpg verification code";
         await sendVerificationEmail({
           email,
           subject,
-          title: "Código de un solo uso",
-          text: "Usa este código para completar tu verificación. Caduca en 5 minutos.",
+          title: "One-time passcode",
+          text: "Use this code to complete verification. It expires in 5 minutes.",
           otp,
         });
       },
@@ -56,10 +56,10 @@ export const auth = betterAuth({
       sendMagicLink: async ({ email, url }) => {
         await sendVerificationEmail({
           email,
-          subject: "Tu enlace de acceso a nicogpg",
-          title: "Enlace de acceso directo",
-          text: "Haz clic en el botón para iniciar sesión en nicogpg sin contraseña. Caduca en 5 minutos.",
-          actionLabel: "Iniciar sesión",
+          subject: "Your nicogpg login link",
+          title: "Magic login link",
+          text: "Click the button to sign in to nicogpg password-free. It expires in 5 minutes.",
+          actionLabel: "Sign in",
           actionUrl: url,
         });
       },

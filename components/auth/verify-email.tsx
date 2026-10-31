@@ -28,32 +28,32 @@ export function VerifyEmail({ email }: VerifyEmailProps) {
       });
 
       if (result.error) {
-        setError("No pudimos reenviar el email. Espera un momento e inténtalo de nuevo.");
+        setError("Could not resend the email. Please wait a moment and try again.");
         return;
       }
 
-      setMessage("Te enviamos un nuevo enlace de verificación.");
+      setMessage("A new verification link has been sent to your email.");
     } catch {
-      setError("No pudimos conectar con el servidor. Inténtalo de nuevo.");
+      setError("Could not connect to the server. Please try again.");
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <AuthScreen title="Revisa tu email" description="Necesitamos confirmar tu dirección antes de permitir el acceso.">
+    <AuthScreen title="Check your email" description="We need to confirm your email address before granting access.">
       <div className="space-y-6">
         <p className="text-sm text-muted-foreground">
-          Enviamos un enlace de verificación a{" "}
-          <strong className="break-all text-foreground">{email || "tu email"}</strong>.
+          We sent a verification link to{" "}
+          <strong className="break-all text-foreground">{email || "your email"}</strong>.
         </p>
         {message && <p role="status" className="text-sm text-primary">{message}</p>}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         <Button type="button" size="lg" className="min-h-12 w-full" onClick={resendEmail} disabled={!email || pending}>
-          {pending ? "Reenviando…" : "Reenviar email de verificación"}
+          {pending ? "Resending…" : "Resend verification email"}
         </Button>
         <Link href="/auth/sign-in" className="block text-center text-sm underline underline-offset-4">
-          Volver a iniciar sesión
+          Back to sign in
         </Link>
       </div>
     </AuthScreen>

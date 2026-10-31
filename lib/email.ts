@@ -65,7 +65,7 @@ export async function sendVerificationEmail({
         <p>${escapeHtml(text)}</p>
         ${code}
         ${action}
-        <p style="color:#667085;font-size:14px">Si no solicitaste esto, puedes ignorar este correo.</p>
+        <p style="color:#667085;font-size:14px">If you didn&#039;t request this, you can safely ignore this email.</p>
       </div>
     `,
   });

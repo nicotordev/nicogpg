@@ -24,14 +24,14 @@ export function UiErrorDialog({ uiError, onDismiss }: UiErrorDialogProps) {
       <AlertDialogContent className="border-slate-800 bg-slate-900 text-slate-100">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-red-400">
-            No se pudo completar la acción
+            Action could not be completed
           </AlertDialogTitle>
           <AlertDialogDescription className="text-slate-400">
             {uiError}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogAction onClick={onDismiss}>Entendido</AlertDialogAction>
+          <AlertDialogAction onClick={onDismiss}>Dismiss</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

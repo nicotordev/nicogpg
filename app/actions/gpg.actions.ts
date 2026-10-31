@@ -65,7 +65,7 @@ export async function createGpgKeyAction(
 ): Promise<{ ok: true; key: GpgKeyDto } | { ok: false; error: string }> {
   const session = await getSession();
   if (!session?.user?.id) {
-    return { ok: false, error: "No autenticado" };
+    return { ok: false, error: "Unauthorized" };
   }
 
   const fingerprint = String(formData.get("fingerprint") ?? "");
@@ -81,7 +81,7 @@ export async function createGpgKeyAction(
     const kdfParams = String(formData.get("kdfParams") ?? "{}");
 
     if (!handle || !keyId || !fingerprint || !publicKey || !encryptedPrivateKeyArmored || !salt) {
-      return { ok: false, error: "Datos de clave incompletos" };
+      return { ok: false, error: "Incomplete key data" };
     }
 
     const alreadySaved = await prisma.gpgKey.findFirst({
@@ -119,7 +119,7 @@ export async function createGpgKeyAction(
       });
       if (saved) return { ok: true, key: toGpgKeyDto(saved) };
     }
-    return { ok: false, error: "No se pudo guardar la clave" };
+    return { ok: false, error: "Could not save key" };
   }
 }
 
@@ -199,7 +199,7 @@ export async function deleteGpgKeyAction(
     return { success: true };
   } catch (error: unknown) {
     console.error("[gpg.actions] deleteGpgKeyAction error:", error);
-    return { success: false, error: "No se pudo eliminar el perfil." };
+    return { success: false, error: "Could not delete profile." };
   }
 }
 
@@ -208,22 +208,22 @@ export async function updateGpgKeyAction(
   data: { handle: string; avatarColor: string },
 ): Promise<{ ok: boolean; key?: GpgKeyDto; error?: string }> {
   const session = await getSession();
-  if (!session?.user?.id) return { ok: false, error: "No autenticado" };
+  if (!session?.user?.id) return { ok: false, error: "Unauthorized" };
 
   const handle = data.handle.trim();
-  if (!handle) return { ok: false, error: "El nombre no puede estar vacío" };
+  if (!handle) return { ok: false, error: "Name cannot be empty" };
 
   try {
     const result = await prisma.gpgKey.updateMany({
       where: { id, userId: session.user.id },
       data: { handle, avatarColor: data.avatarColor },
     });
-    if (result.count === 0) return { ok: false, error: "Perfil no encontrado" };
+    if (result.count === 0) return { ok: false, error: "Profile not found" };
     const key = await prisma.gpgKey.findUniqueOrThrow({ where: { id } });
     revalidatePath("/");
     return { ok: true, key };
   } catch (error) {
     console.error("[gpg.actions] updateGpgKeyAction error:", error);
-    return { ok: false, error: "No se pudo actualizar el perfil" };
+    return { ok: false, error: "Could not update profile" };
   }
 }

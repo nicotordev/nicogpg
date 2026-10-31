@@ -3,18 +3,18 @@ import { AuthScreen } from "@/components/auth/auth-screen";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 
 export const metadata: Metadata = {
-  title: "Crear cuenta",
+  title: "Create account",
   description:
-    "Crea una cuenta de nicogpg para guardar perfiles de claves OpenPGP cifrados y usarlos desde el navegador.",
+    "Create a nicogpg account to store encrypted OpenPGP key profiles and use them from your browser.",
 };
 
 export default function SignUpPage() {
   return (
-    <AuthScreen title="Crear cuenta" description="Completa los pasos para crear tu cuenta y usar passkeys.">
+    <AuthScreen title="Create account" description="Complete the steps to create your account and use passkeys.">
       <SignUpForm />
       <p className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 px-5 text-center text-sm text-muted-foreground md:static md:mt-8 md:px-0">
-        ¿Ya tienes una cuenta?{" "}
-        <a href="/auth/sign-in" className="underline underline-offset-4">Inicia sesión</a>
+        Already have an account?{" "}
+        <a href="/auth/sign-in" className="underline underline-offset-4">Sign in</a>
       </p>
     </AuthScreen>
   );

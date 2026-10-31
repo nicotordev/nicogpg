@@ -61,7 +61,7 @@ export async function resolveEmailFromIdentifier(
 ): Promise<{ success: boolean; email?: string; error?: string }> {
   const trimmed = identifier.trim();
   if (!trimmed) {
-    return { success: false, error: "Ingresa tu correo o nombre de usuario." };
+    return { success: false, error: "Please enter your email or username." };
   }
 
   // If it contains an '@', treat it directly as an email
@@ -81,7 +81,7 @@ export async function resolveEmailFromIdentifier(
     if (!user) {
       return {
         success: false,
-        error: "No encontramos ninguna cuenta con ese nombre de usuario.",
+        error: "We could not find an account with that username.",
       };
     }
 
@@ -90,7 +90,7 @@ export async function resolveEmailFromIdentifier(
     console.error("[auth.actions] Error resolving email from username:", error);
     return {
       success: false,
-      error: "Ocurrió un error al buscar el usuario. Inténtalo de nuevo.",
+      error: "An error occurred while finding the user. Please try again.",
     };
   }
 }

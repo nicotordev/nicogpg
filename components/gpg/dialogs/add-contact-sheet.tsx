@@ -49,11 +49,11 @@ export function AddContactSheet({
         <SheetHeader className="border-b border-slate-800 px-4 pb-4 pt-5 text-left sm:px-6">
           <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-700" />
           <SheetTitle className="flex items-center gap-2 text-xl font-bold text-white font-heading">
-            <UserPlus className="size-5 text-emerald-400" /> Agregar chat
+            <UserPlus className="size-5 text-emerald-400" /> Add contact
           </SheetTitle>
           <SheetDescription className="text-xs text-slate-400">
-            Crea un chat sin clave, cifra con una clave pública, o habla
-            contigo usando la clave de este perfil.
+            Create a keyless chat, encrypt with a public key, or create notes
+            to yourself using this profile&apos;s key.
           </SheetDescription>
         </SheetHeader>
 
@@ -72,9 +72,9 @@ export function AddContactSheet({
                   : "border-slate-800 text-slate-400",
               )}
             >
-              <span className="block font-semibold">Sin clave</span>
+              <span className="block font-semibold">Keyless</span>
               <span className="mt-1 block text-[11px] text-slate-400">
-                Nota local en este navegador
+                Local note in this browser
               </span>
             </button>
             <button
@@ -87,9 +87,9 @@ export function AddContactSheet({
                   : "border-slate-800 text-slate-400",
               )}
             >
-              <span className="block font-semibold">Clave pública</span>
+              <span className="block font-semibold">Public Key</span>
               <span className="mt-1 block text-[11px] text-slate-400">
-                Cifrado OpenPGP para otra persona
+                OpenPGP encryption for recipient
               </span>
             </button>
           </div>
@@ -100,11 +100,11 @@ export function AddContactSheet({
             onClick={onCreateSelfChat}
             className="w-full border-slate-700"
           >
-            <UserRound className="size-4 mr-2" /> Chatear conmigo
+            <UserRound className="size-4 mr-2" /> Note to self
           </Button>
           <div className="space-y-2">
             <Label className="text-xs font-semibold text-slate-300">
-              Nombre
+              Name
             </Label>
             <Input
               required
@@ -117,7 +117,7 @@ export function AddContactSheet({
           {mode === "keyed" ? (
             <div className="space-y-2">
               <Label className="text-xs font-semibold text-slate-300">
-                Clave pública
+                Public key
               </Label>
               <Textarea
                 required
@@ -130,8 +130,7 @@ export function AddContactSheet({
             </div>
           ) : (
             <p className="text-[11px] leading-relaxed text-slate-500">
-              El texto queda guardado solo en este navegador. No se cifra para
-              otra persona.
+              Text is saved only in this browser and is not encrypted for anyone else.
             </p>
           )}
           {contactError && (
@@ -145,13 +144,13 @@ export function AddContactSheet({
               variant="ghost"
               onClick={() => onOpenChange(false)}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               type="submit"
               className="bg-emerald-600 hover:bg-emerald-700"
             >
-              <UserPlus className="size-4 mr-2" /> Guardar chat
+              <UserPlus className="size-4 mr-2" /> Save contact
             </Button>
           </div>
         </form>
