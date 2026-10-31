@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Sparkles,
   Plus,
@@ -27,7 +29,15 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import type { ParsedGpgKey } from "@/lib/gpg-crypto";
+import { useMobileSheet } from "../use-mobile-sheet";
 import { AVATAR_GRADIENTS } from "../types";
 import { cn } from "@/lib/utils";
 
@@ -88,18 +98,30 @@ export function AddKeyDialog({
   creationStatusText,
   onSubmit,
 }: AddKeyDialogProps) {
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100%-1.5rem)] max-h-[85vh] overflow-y-auto border-slate-800 bg-slate-900 p-4 sm:max-w-lg sm:p-6 text-slate-100">
-        <DialogHeader className="space-y-2">
-          <DialogTitle className="text-xl font-bold font-heading flex items-center gap-2 text-white">
-            <Sparkles className="size-5 text-red-500" /> GPG Key Profile Setup
-          </DialogTitle>
-          <DialogDescription className="text-xs text-slate-400">
-            Generate or import an OpenPGP identity envelope. Passphrases never
-            touch the server.
-          </DialogDescription>
-        </DialogHeader>
+  const mobile = useMobileSheet();
+  const content = (
+    <>
+        {mobile ? (
+          <SheetHeader className="space-y-2 px-0 pt-1 text-left">
+            <SheetTitle className="flex items-center gap-2 font-heading text-xl font-bold text-white">
+              <Sparkles className="size-5 text-red-500" /> GPG Key Profile Setup
+            </SheetTitle>
+            <SheetDescription className="text-xs text-slate-400">
+              Generate or import an OpenPGP identity envelope. Passphrases never
+              touch the server.
+            </SheetDescription>
+          </SheetHeader>
+        ) : (
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-xl font-bold font-heading flex items-center gap-2 text-white">
+              <Sparkles className="size-5 text-red-500" /> GPG Key Profile Setup
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-400">
+              Generate or import an OpenPGP identity envelope. Passphrases never
+              touch the server.
+            </DialogDescription>
+          </DialogHeader>
+        )}
 
         <Tabs
           value={modalMode}
@@ -191,10 +213,10 @@ export function AddKeyDialog({
 
             <TabsContent value="import" className="space-y-4 m-0">
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-                  <Label>Paste OpenPGP Armored Block (.asc / .gpg)</Label>
-                  <span className="text-[11px] text-blue-400 flex items-center gap-1">
-                    <ClipboardPaste className="size-3" /> Paste & Drop Sensitive
+                <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-300">
+                  <Label>Armored key</Label>
+                  <span className="flex shrink-0 items-center gap-1 text-[11px] text-blue-400">
+                    <ClipboardPaste className="size-3" /> Paste or drop
                   </span>
                 </div>
 
@@ -325,12 +347,12 @@ export function AddKeyDialog({
               </div>
             )}
 
-            <div className="pt-2 flex justify-end gap-3">
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end sm:gap-3">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => onOpenChange(false)}
-                className="text-slate-400 hover:text-white"
+                className="w-full text-slate-400 hover:text-white sm:w-auto"
               >
                 Cancel
               </Button>
@@ -345,7 +367,7 @@ export function AddKeyDialog({
                       (parsedKeyInfo.isPrivateKey && !importPassphrase)))
                 }
                 className={cn(
-                  "text-white font-medium",
+                  "w-full text-white font-medium sm:w-auto",
                   modalMode === "generate"
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-blue-600 hover:bg-blue-700",
@@ -360,6 +382,27 @@ export function AddKeyDialog({
             </div>
           </form>
         </Tabs>
+    </>
+  );
+
+  if (mobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[92dvh] gap-4 overflow-y-auto rounded-t-3xl border-slate-800 bg-slate-900 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] text-slate-100 [&_input]:text-base [&_textarea]:text-base"
+        >
+          <div className="mx-auto h-1.5 w-12 shrink-0 rounded-full bg-slate-700" />
+          {content}
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] max-w-[calc(100%-1.5rem)] overflow-y-auto border-slate-800 bg-slate-900 p-4 text-slate-100 sm:max-w-lg sm:p-6">
+        {content}
       </DialogContent>
     </Dialog>
   );

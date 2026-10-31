@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { LoaderCircle, Lock } from "lucide-react";
+import { useMobileSheet } from "../use-mobile-sheet";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,20 +25,6 @@ function blockDismiss(
   details: { cancel: () => void },
 ) {
   if (!next) details.cancel();
-}
-
-function useMobileSheet() {
-  const [mobile, setMobile] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 767px)");
-    const sync = () => setMobile(media.matches);
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
-
-  return mobile;
 }
 
 interface ProfilePassphraseDialogProps {
