@@ -1,12 +1,12 @@
 # nicogpg
 
-Next.js con Prisma 7.10.0, PostgreSQL y Better Auth 1.7.7.
+Next.js with Prisma 7.10.0, PostgreSQL, and Better Auth 1.7.7.
 
-## Desarrollo
+## Development
 
-1. Copia `.env.example` a `.env` y configura `DATABASE_URL` para tu PostgreSQL.
-2. Genera `BETTER_AUTH_SECRET` con `openssl rand -base64 32` y configura `BETTER_AUTH_URL` (local: `http://localhost:3000`).
-3. Instala las dependencias y aplica la migración inicial:
+1. Copy `.env.example` to `.env` and configure `DATABASE_URL` for your PostgreSQL instance.
+2. Generate `BETTER_AUTH_SECRET` with `openssl rand -base64 32` and set `BETTER_AUTH_URL` (local: `http://localhost:3000`).
+3. Install dependencies and apply the initial migration:
 
 ```bash
 bun install
@@ -14,49 +14,48 @@ bun run db:deploy
 bun dev
 ```
 
-`bun install` genera Prisma Client. No se versionan el cliente generado ni los secretos.
-La migración inicial crea las tablas de usuarios, sesiones, cuentas y verificaciones.
+`bun install` generates Prisma Client. The generated client and secrets are not committed.
+The initial migration creates the users, sessions, accounts, and verifications tables.
 
-## Autenticación
+## Authentication
 
-- `auth.ts`: instancia del servidor con email/contraseña y cookies para Server Actions.
-- `lib/auth-client.ts`: cliente React (`authClient.signUp.email`, `authClient.signIn.email`, `authClient.signIn.passkey`, `authClient.signOut`, `authClient.useSession`).
-- `app/api/auth/[...all]/route.ts`: endpoints GET y POST de Better Auth.
-- `lib/prisma.ts`: cliente Prisma reutilizado durante hot reload, con el adaptador PostgreSQL.
+- `auth.ts`: Server instance configured with email/password, OTP, magic links, and cookies for Server Actions.
+- `lib/auth-client.ts`: React client (`authClient.signUp.email`, `authClient.signIn.email`, `authClient.signIn.passkey`, `authClient.signOut`, `authClient.useSession`).
+- `app/api/auth/[...all]/route.ts`: Better Auth GET and POST endpoints.
+- `lib/prisma.ts`: Reused Prisma client instance across hot reloads using the PostgreSQL adapter.
 
-El cliente usa el mismo dominio de la aplicación. No hay proveedores OAuth configurados.
-Las rutas `/auth/sign-up` y `/auth/sign-in` ofrecen registro e inicio de sesión
-con correo y contraseña; las contraseñas requieren al menos 8 caracteres.
+The client runs on the same domain as the app. No OAuth providers are configured.
+The `/auth/sign-up` and `/auth/sign-in` routes offer registration and login with email, OTP, magic link, passkey, or password (passwords require at least 8 characters).
 
-## Base de datos
+## Database
 
-La configuración del CLI está en `prisma7.config.ts`, creada por Prisma 7.10.
+CLI configuration is located in `prisma7.config.ts`, created by Prisma 7.10.
 
 ```bash
-bun run db:generate                 # Regenerar el cliente
-bun run db:migrate --name cambio    # Crear/aplicar migraciones en desarrollo
-bun run db:deploy                  # Aplicar migraciones existentes
-bun run db:studio                  # Explorar datos
+bun run db:generate                 # Regenerate client
+bun run db:migrate --name change    # Create/apply migrations in development
+bun run db:deploy                  # Apply existing migrations
+bun run db:studio                  # Explore data
 ```
 
-Antes de compilar o arrancar, configura las variables de entorno. En despliegue,
-aplica las migraciones con `bun run db:deploy` y usa la URL pública en `BETTER_AUTH_URL`.
+Before building or starting, ensure your environment variables are configured. In production/deployment,
+apply migrations with `bun run db:deploy` and use your public URL in `BETTER_AUTH_URL`.
 
-Se mantiene Prisma CLI, Client y adapter-pg en 7.10.0: al inicializar, `prisma@latest`
-apuntaba a 8.0.0-rc.20, mientras Client y adapter-pg seguían en la versión estable 7.10.0.
+Prisma CLI, Client, and adapter-pg are pinned to 7.10.0: during initialization, `prisma@latest`
+pointed to 8.0.0-rc.20 while Client and adapter-pg remained on stable 7.10.0.
 
-Referencias: [Prisma adapter](https://better-auth.com/docs/adapters/prisma) y
-[integración Next.js](https://better-auth.com/docs/integrations/next).
+References: [Prisma adapter](https://better-auth.com/docs/adapters/prisma) and
+[Next.js integration](https://better-auth.com/docs/integrations/next).
 
 ## Passkeys
 
-En `/auth/sign-in` puedes iniciar sesión con una passkey previamente registrada.
-Para registrar la primera, inicia sesión con correo y contraseña y visita
-`/auth/passkeys`. El servidor exige una sesión para registrar credenciales.
+At `/auth/sign-in`, you can log in with a previously registered passkey.
+To register your first passkey, sign in with your email and password and visit
+`/auth/passkeys`. The server requires an active session to register credentials.
 
-Aplica la migración con `bun run db:deploy` antes de usar esta función.
-Configura `BETTER_AUTH_URL` con el origen real de la aplicación: Better Auth deriva
-el RP ID de su hostname. En producción usa HTTPS; para desarrollo se admite
-`http://localhost:3000`. Las passkeys quedan vinculadas al dominio donde se crean.
+Apply migrations with `bun run db:deploy` before using this feature.
+Set `BETTER_AUTH_URL` to the actual application origin: Better Auth derives
+the RP ID from its hostname. In production use HTTPS; in local development
+`http://localhost:3000` is permitted. Passkeys are bound to the domain where they are registered.
 
-Integración: [plugin oficial de passkeys](https://better-auth.com/docs/plugins/passkey).
+Integration: [Official Passkey plugin](https://better-auth.com/docs/plugins/passkey).
