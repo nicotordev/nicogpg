@@ -10,7 +10,7 @@ export function VaultLoading() {
     >
       {/* Top Header Skeleton */}
       <header className="sticky top-0 z-40 w-full border-b border-white/6 bg-slate-950/85 px-3 py-3 backdrop-blur-xl sm:px-6 sm:py-4">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3">
+        <div className="flex w-full items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <img
               src="/logo.svg"
@@ -25,7 +25,7 @@ export function VaultLoading() {
             </span>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+          <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-3">
             <div className="h-8 w-24 sm:w-28 rounded-lg bg-slate-800/60 animate-pulse hidden sm:block" />
             <div className="h-8 w-8 sm:w-24 rounded-lg bg-slate-800/60 animate-pulse" />
             <div className="h-8 w-8 sm:w-24 rounded-lg bg-red-900/30 border border-red-500/20 animate-pulse" />

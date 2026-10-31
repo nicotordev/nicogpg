@@ -20,7 +20,7 @@ export function GpgHeader({
 }: GpgHeaderProps) {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/6 bg-slate-950/85 px-3 py-3 backdrop-blur-xl sm:px-6 sm:py-4">
-      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3">
+      <div className="flex w-full items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <img
             src="/logo.svg"
@@ -38,7 +38,7 @@ export function GpgHeader({
           </Badge>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+        <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-3">
           {session ? (
             <div className="flex items-center gap-1.5 sm:gap-3">
               <span className="hidden md:inline-block text-xs font-mono text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">
