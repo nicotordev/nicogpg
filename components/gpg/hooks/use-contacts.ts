@@ -4,10 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import type { GpgKeyDto } from "@/app/actions/gpg.actions";
 import {
   appendMessageAction,
+  clearConversationAction,
   createContactAction,
   deleteContactAction,
+  deleteMessageAction,
   listContactsAction,
   listMessagesAction,
+  setMessageFavoriteAction,
 } from "@/app/actions/chat.actions";
 import { parseArmoredGpgKey, encryptMessageForRecipient } from "@/lib/gpg-crypto";
 import { decryptStorageData } from "@/lib/secure-storage";
@@ -423,12 +426,90 @@ export function useContacts() {
             id: `revealed-${crypto.randomUUID()}`,
             ciphertext: normalized,
             createdAt: new Date().toISOString(),
+            favorite: false,
             revealedText: plaintext,
           },
         ];
       }
       return next;
     });
+  }, [selectedContactId]);
+
+  const updateMessage = useCallback(
+    (contactId: string, messageId: string, map: (message: ChatMessage) => ChatMessage) => {
+      setMessagesByContact((current) => ({
+        ...current,
+        [contactId]: (current[contactId] ?? []).map((message) =>
+          message.id === messageId ? map(message) : message,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const deleteMessage = useCallback(
+    async (messageId: string) => {
+      if (!selectedContactId) return;
+      if (!messageId.startsWith("revealed-")) {
+        const result = await deleteMessageAction(messageId);
+        if (!result.ok) {
+          setContactError(result.error);
+          return;
+        }
+      }
+      const remaining = (messagesByContact[selectedContactId] ?? []).filter(
+        (message) => message.id !== messageId,
+      );
+      setMessagesByContact((current) => ({
+        ...current,
+        [selectedContactId]: (current[selectedContactId] ?? []).filter(
+          (message) => message.id !== messageId,
+        ),
+      }));
+      setContacts((current) =>
+        current.map((contact) =>
+          contact.id === selectedContactId
+            ? { ...contact, hasMessages: remaining.length > 0 }
+            : contact,
+        ),
+      );
+    },
+    [messagesByContact, selectedContactId],
+  );
+
+  const toggleMessageFavorite = useCallback(
+    async (messageId: string) => {
+      if (!selectedContactId) return;
+      const currentMessage = (messagesByContact[selectedContactId] ?? []).find(
+        (message) => message.id === messageId,
+      );
+      if (!currentMessage) return;
+      const favorite = !currentMessage.favorite;
+      if (!messageId.startsWith("revealed-")) {
+        const result = await setMessageFavoriteAction({ messageId, favorite });
+        if (!result.ok) {
+          setContactError(result.error);
+          return;
+        }
+      }
+      updateMessage(selectedContactId, messageId, (message) => ({ ...message, favorite }));
+    },
+    [messagesByContact, selectedContactId, updateMessage],
+  );
+
+  const clearSelectedChat = useCallback(async () => {
+    if (!selectedContactId) return;
+    const result = await clearConversationAction(selectedContactId);
+    if (!result.ok) {
+      setContactError(result.error);
+      return;
+    }
+    setMessagesByContact((current) => ({ ...current, [selectedContactId]: [] }));
+    setContacts((current) =>
+      current.map((contact) =>
+        contact.id === selectedContactId ? { ...contact, hasMessages: false } : contact,
+      ),
+    );
   }, [selectedContactId]);
 
   const selectedMessages = messagesByContact[selectedContactId] ?? [];
@@ -459,5 +540,8 @@ export function useContacts() {
     handleAddContact,
     handleEncryptMessage,
     revealDecryptedMessage,
+    deleteMessage,
+    toggleMessageFavorite,
+    clearSelectedChat,
   };
 }

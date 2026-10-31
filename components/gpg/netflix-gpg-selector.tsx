@@ -338,6 +338,15 @@ function NetflixGpgSelectorContent() {
               contactsState.setIsContactDialogOpen(true);
             }}
             onMessageToContactChange={contactsState.setMessageToContact}
+            onDeleteMessage={(messageId) => {
+              void contactsState.deleteMessage(messageId);
+            }}
+            onToggleFavorite={(messageId) => {
+              void contactsState.toggleMessageFavorite(messageId);
+            }}
+            onClearChat={() => {
+              void contactsState.clearSelectedChat();
+            }}
             onEncryptMessage={() =>
               contactsState.handleEncryptMessage(
                 keysState.selectedKey,

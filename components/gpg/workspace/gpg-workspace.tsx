@@ -33,6 +33,9 @@ interface GpgWorkspaceProps {
   onCreateSelfChat: () => void;
   onMessageToContactChange: (val: string) => void;
   onEncryptMessage: () => void;
+  onDeleteMessage: (messageId: string) => void;
+  onToggleFavorite: (messageId: string) => void;
+  onClearChat: () => void;
   onMessageToSignChange: (val: string) => void;
   onSignMessage: () => void;
 }
@@ -62,6 +65,9 @@ export function GpgWorkspace({
   onCreateSelfChat,
   onMessageToContactChange,
   onEncryptMessage,
+  onDeleteMessage,
+  onToggleFavorite,
+  onClearChat,
   onMessageToSignChange,
   onSignMessage,
 }: GpgWorkspaceProps) {
@@ -112,6 +118,9 @@ export function GpgWorkspace({
         onMessageChange={onMessageToContactChange}
         onEncryptMessage={onEncryptMessage}
         onCopyText={onCopyText}
+        onDeleteMessage={onDeleteMessage}
+        onToggleFavorite={onToggleFavorite}
+        onClearChat={onClearChat}
       />
       ) : null}
 

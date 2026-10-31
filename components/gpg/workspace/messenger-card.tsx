@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Copy,
   LoaderCircle,
+  Star,
   MessageCircle,
   PanelLeft,
   Send,
@@ -36,6 +37,9 @@ interface MessengerCardProps {
   onMessageChange: (value: string) => void;
   onEncryptMessage: () => void;
   onCopyText: (text: string, id: string) => void;
+  onDeleteMessage: (messageId: string) => void;
+  onToggleFavorite: (messageId: string) => void;
+  onClearChat: () => void;
 }
 
 function kindLabel(kind: ContactKind | null): string {
@@ -85,14 +89,21 @@ export function MessengerCard({
   onMessageChange,
   onEncryptMessage,
   onCopyText,
+  onDeleteMessage,
+  onToggleFavorite,
+  onClearChat,
 }: MessengerCardProps) {
   const [mobileThread, setMobileThread] = useState(false);
   const [sidebarHidden, setSidebarHidden] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const threadEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (selectedContactId) setMobileThread(true);
     else setMobileThread(false);
+    setShowFavorites(false);
+    setConfirmClear(false);
   }, [selectedContactId]);
 
   const selectedContact = contacts.find(
@@ -102,6 +113,9 @@ export function MessengerCard({
   const canSend = Boolean(
     selectedContact && messageToContact.trim() && !isEncryptingMessage,
   );
+  const visibleMessages = showFavorites
+    ? selectedMessages.filter((message) => message.favorite)
+    : selectedMessages;
 
   function openChat(contactId: string) {
     onSelectContact(contactId);
@@ -269,10 +283,65 @@ export function MessengerCard({
                   {selectedContact?.name ?? "Select a chat"}
                 </p>
                 <p className="truncate text-xs text-red-400">
-                  {statusLabel(selectedKind)}
+                  {showFavorites ? "Favorite messages" : statusLabel(selectedKind)}
                 </p>
               </div>
+              {selectedContact ? (
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-pressed={showFavorites}
+                    title={showFavorites ? "Show all messages" : "Show favorite messages"}
+                    aria-label={showFavorites ? "Show all messages" : "Show favorite messages"}
+                    onClick={() => setShowFavorites((current) => !current)}
+                    className={cn(
+                      "text-slate-200 hover:bg-slate-900",
+                      showFavorites && "text-amber-300",
+                    )}
+                  >
+                    <Star className={cn("size-4", showFavorites && "fill-amber-300")} />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    title="Clear chat"
+                    aria-label="Clear chat"
+                    disabled={selectedMessages.length === 0}
+                    onClick={() => setConfirmClear(true)}
+                    className="text-slate-200 hover:bg-red-950/40 hover:text-red-300"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              ) : null}
             </header>
+            {confirmClear ? (
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 bg-red-950/40 px-3 py-2 text-xs text-red-100">
+                <p>Delete every message in this chat?</p>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmClear(false)}
+                    className="rounded-full px-3 py-1 text-slate-200 hover:bg-slate-900"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirmClear(false);
+                      onClearChat();
+                    }}
+                    className="rounded-full bg-red-600 px-3 py-1 font-medium text-white hover:bg-red-700"
+                  >
+                    Clear chat
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             <div className="min-h-0 flex-1 overflow-y-auto bg-slate-950 px-3 py-4 sm:px-6">
               {!selectedContact ? (
@@ -283,9 +352,9 @@ export function MessengerCard({
                 <p className="mx-auto mt-16 max-w-xs text-center text-sm text-slate-400">
                   Loading messages…
                 </p>
-              ) : selectedMessages.length > 0 ? (
+              ) : visibleMessages.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  {selectedMessages.map((message) => {
+                  {visibleMessages.map((message) => {
                     const revealed = message.revealedText;
                     const bubbleText = revealed || message.ciphertext;
                     const bubbleIsArmor = bubbleText.includes("BEGIN PGP");
@@ -304,26 +373,38 @@ export function MessengerCard({
                               : ""}
                           </p>
                           {bubbleIsArmor ? (
-                            <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed">
+                            <pre className="max-h-48 cursor-text overflow-auto whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed select-text! selection:bg-white! selection:text-red-950!">
                               {bubbleText}
                             </pre>
                           ) : (
-                            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                            <p className="cursor-text whitespace-pre-wrap break-words text-sm leading-relaxed select-text! selection:bg-white! selection:text-red-950!">
                               {bubbleText}
                             </p>
                           )}
-                          <div className="mt-1 flex justify-end">
+                          <div className="mt-1 flex justify-end gap-2">
                             <button
                               type="button"
                               onClick={() => onCopyText(bubbleText, copyId)}
                               className="inline-flex items-center gap-1 text-[11px] text-red-100 hover:underline"
                             >
                               <Copy className="size-3" />
-                              {copiedId === copyId
-                                ? "Copied"
-                                : revealed
-                                  ? "Copy message"
-                                  : "Copy encrypted message"}
+                              {copiedId === copyId ? "Copied" : "Copy"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onToggleFavorite(message.id)}
+                              className="inline-flex items-center gap-1 text-[11px] text-red-100 hover:underline"
+                            >
+                              <Star className={cn("size-3", message.favorite && "fill-amber-200")} />
+                              {message.favorite ? "Favorited" : "Favorite"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onDeleteMessage(message.id)}
+                              className="inline-flex items-center gap-1 text-[11px] text-red-100 hover:underline"
+                            >
+                              <Trash2 className="size-3" />
+                              Delete
                             </button>
                           </div>
                         </div>
@@ -334,7 +415,9 @@ export function MessengerCard({
                 </div>
               ) : (
                 <p className="mx-auto mt-16 max-w-xs rounded-lg border border-white/8 bg-[#0b1122] px-4 py-3 text-center text-sm text-slate-300">
-                  Type below. Each message is encrypted with OpenPGP and added to this conversation.
+                  {showFavorites
+                    ? "No favorite messages in this chat."
+                    : "Type below. Each message is encrypted with OpenPGP and added to this conversation."}
                 </p>
               )}
             </div>

@@ -44,6 +44,7 @@ export interface MessageRecord {
   id: string;
   ciphertext: string;
   createdAt: string;
+  favorite: boolean;
 }
 
 type ActionFailure = { ok: false; error: string };
@@ -213,7 +214,7 @@ export async function listMessagesAction(
       where: { conversationId: conversation.id },
       orderBy: { createdAt: "desc" },
       take: 200,
-      select: { id: true, ciphertext: true, createdAt: true },
+      select: { id: true, ciphertext: true, createdAt: true, favorite: true },
     });
 
     return {
@@ -222,6 +223,7 @@ export async function listMessagesAction(
         id: row.id,
         ciphertext: row.ciphertext,
         createdAt: row.createdAt.toISOString(),
+        favorite: row.favorite,
       })),
     };
   } catch (error: unknown) {
@@ -264,7 +266,7 @@ export async function appendMessageAction(input: {
         ciphertext: parsed.data.ciphertext,
         ...(parsed.data.ownerKeyId ? { ownerKeyId: parsed.data.ownerKeyId } : {}),
       },
-      select: { id: true, ciphertext: true, createdAt: true },
+      select: { id: true, ciphertext: true, createdAt: true, favorite: true },
     });
 
     await prisma.conversation.update({
@@ -278,10 +280,93 @@ export async function appendMessageAction(input: {
         id: created.id,
         ciphertext: created.ciphertext,
         createdAt: created.createdAt.toISOString(),
+        favorite: created.favorite,
       },
     };
   } catch (error: unknown) {
     console.error("[chat.actions] appendMessageAction error:", error);
     return failure("Could not save message.");
+  }
+}
+
+async function ownedMessage(userId: string, messageId: string) {
+  return prisma.message.findFirst({
+    where: { id: messageId, conversation: { userId } },
+    select: { id: true, conversationId: true },
+  });
+}
+
+export async function deleteMessageAction(
+  messageId: string,
+): Promise<{ ok: true } | ActionFailure> {
+  const userId = await requireUserId();
+  if (typeof userId !== "string") return userId;
+  if (!messageId) return failure("Could not delete the message.");
+
+  try {
+    const message = await ownedMessage(userId, messageId);
+    if (!message) return failure("Could not delete the message.");
+    await prisma.message.delete({ where: { id: message.id } });
+    await prisma.conversation.update({
+      where: { id: message.conversationId },
+      data: { updatedAt: new Date() },
+    });
+    return { ok: true };
+  } catch (error: unknown) {
+    console.error("[chat.actions] deleteMessageAction error:", error);
+    return failure("Could not delete the message.");
+  }
+}
+
+export async function clearConversationAction(
+  contactId: string,
+): Promise<{ ok: true } | ActionFailure> {
+  const userId = await requireUserId();
+  if (typeof userId !== "string") return userId;
+
+  try {
+    const conversation = await prisma.conversation.findFirst({
+      where: { contactId, userId },
+      select: { id: true },
+    });
+    if (!conversation) return failure("That chat does not exist.");
+    await prisma.message.deleteMany({ where: { conversationId: conversation.id } });
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { updatedAt: new Date() },
+    });
+    return { ok: true };
+  } catch (error: unknown) {
+    console.error("[chat.actions] clearConversationAction error:", error);
+    return failure("Could not clear the chat.");
+  }
+}
+
+export async function setMessageFavoriteAction(input: {
+  messageId: string;
+  favorite: boolean;
+}): Promise<{ ok: true } | ActionFailure> {
+  const userId = await requireUserId();
+  if (typeof userId !== "string") return userId;
+
+  const parsed = z
+    .object({
+      messageId: z.string().min(1).max(64),
+      favorite: z.boolean(),
+    })
+    .safeParse(input);
+  if (!parsed.success) return failure("Could not update the favorite.");
+
+  try {
+    const message = await ownedMessage(userId, parsed.data.messageId);
+    if (!message) return failure("Could not update the favorite.");
+    await prisma.message.update({
+      where: { id: message.id },
+      data: { favorite: parsed.data.favorite },
+    });
+    return { ok: true };
+  } catch (error: unknown) {
+    console.error("[chat.actions] setMessageFavoriteAction error:", error);
+    return failure("Could not update the favorite.");
   }
 }

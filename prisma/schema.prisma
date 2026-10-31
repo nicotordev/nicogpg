@@ -161,6 +161,7 @@ model Message {
   ownerKeyId     String?
   ownerKey       GpgKey?      @relation(fields: [ownerKeyId], references: [id], onDelete: SetNull)
   ciphertext     String       @db.Text
+  favorite       Boolean      @default(false)
   createdAt      DateTime     @default(now())
 
   @@index([conversationId, createdAt])

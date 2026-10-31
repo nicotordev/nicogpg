@@ -34,6 +34,7 @@ export interface ChatMessage {
   id: string;
   ciphertext: string;
   createdAt: string;
+  favorite: boolean;
   revealedText?: string;
 }
 
