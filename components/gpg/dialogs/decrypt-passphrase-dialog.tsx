@@ -34,11 +34,11 @@ export function DecryptPassphraseDialog({
       <DialogContent className="max-w-[calc(100%-1.5rem)] border-slate-800 bg-slate-900 text-slate-100 sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white">
-            <Lock className="size-4 text-amber-400" /> Clave privada
+            <Lock className="size-4 text-amber-400" /> Private key
           </DialogTitle>
           <DialogDescription className="text-xs text-slate-400">
-            Escribe la passphrase de este perfil para descifrar el mensaje. Se
-            usa solo en este navegador.
+            Enter this profile passphrase to decrypt the message. It stays in
+            this browser.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4">
@@ -53,7 +53,7 @@ export function DecryptPassphraseDialog({
               required
               value={passphrase}
               onChange={(event) => onPassphraseChange(event.target.value)}
-              placeholder="Passphrase de la clave privada"
+              placeholder="Private key passphrase"
               className="border-slate-800 bg-slate-950 text-white"
             />
           </div>
@@ -68,7 +68,7 @@ export function DecryptPassphraseDialog({
               variant="ghost"
               onClick={() => onOpenChange(false)}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               type="submit"
@@ -78,7 +78,7 @@ export function DecryptPassphraseDialog({
               {isDecrypting ? (
                 <LoaderCircle className="size-4 animate-spin" />
               ) : (
-                "Descifrar"
+                "Decrypt"
               )}
             </Button>
           </div>

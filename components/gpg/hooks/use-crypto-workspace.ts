@@ -13,6 +13,7 @@ export function useCryptoWorkspace() {
   // Volatile in-memory unlocked private key
   const [unlockedPrivateKey, setUnlockedPrivateKey] =
     useState<PrivateKey | null>(null);
+  const [openProfileId, setOpenProfileId] = useState<string | null>(null);
   const [unlockPassphraseInput, setUnlockPassphraseInput] = useState("");
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
@@ -36,9 +37,14 @@ export function useCryptoWorkspace() {
   // Clear memory and reset workspace states
   const lockKey = useCallback(() => {
     setUnlockedPrivateKey(null);
+    setOpenProfileId(null);
     setUnlockError(null);
     setUnlockPassphraseInput("");
     setSignedOutput("");
+  }, []);
+
+  const enterProfile = useCallback((profileId: string) => {
+    setOpenProfileId(profileId);
   }, []);
 
   // Unlock private key in client memory
@@ -60,11 +66,10 @@ export function useCryptoWorkspace() {
           passphrase: unlockPassphraseInput,
         });
         setUnlockedPrivateKey(unlocked);
+        setOpenProfileId(selectedKey.id);
         setUnlockPassphraseInput("");
       } catch {
-        setUnlockError(
-          "Incorrect GPG passphrase. Failed to decrypt key envelope.",
-        );
+        setUnlockError("That passphrase does not match this private key.");
       } finally {
         setIsUnlocking(false);
       }
@@ -90,6 +95,19 @@ export function useCryptoWorkspace() {
   }, [unlockedPrivateKey, messageToSign, isSigning]);
 
   // Request decryption modal for armored PGP message
+  const decryptWithUnlockedKey = useCallback(
+    async (armoredMessage: string): Promise<string> => {
+      if (!unlockedPrivateKey) {
+        throw new Error("Profile is locked.");
+      }
+      return decryptMessageInMemory({
+        unlockedPrivateKey,
+        armoredMessage,
+      });
+    },
+    [unlockedPrivateKey],
+  );
+
   const requestDecrypt = useCallback((armored: string) => {
     setPendingDecryptArmored(armored);
     setDecryptPassphrase("");
@@ -109,7 +127,7 @@ export function useCryptoWorkspace() {
     async (
       selectedKey: GpgKeyDto | null,
       event?: React.FormEvent,
-      onSuccess?: (plaintext: string) => void,
+      onSuccess?: (plaintext: string, armoredMessage: string) => void,
     ) => {
       if (event) event.preventDefault();
       if (
@@ -129,22 +147,24 @@ export function useCryptoWorkspace() {
           passphrase: decryptPassphrase,
         });
         setUnlockedPrivateKey(unlocked);
+        setOpenProfileId(selectedKey.id);
         try {
           const readable = await decryptMessageInMemory({
             unlockedPrivateKey: unlocked,
             armoredMessage: pendingDecryptArmored,
           });
+          const armoredMessage = pendingDecryptArmored;
           setDecryptPassphrase("");
           setPendingDecryptArmored(null);
           setDecryptDialogOpen(false);
-          if (onSuccess) onSuccess(readable);
+          if (onSuccess) onSuccess(readable, armoredMessage);
         } catch (error: unknown) {
           console.error("Decrypt command error:", error);
-          setDecryptDialogError("No se pudo descifrar el mensaje con esta clave.");
+          setDecryptDialogError("Could not decrypt this message with this key.");
         }
       } catch (error: unknown) {
         console.error("Unlock for decrypt error:", error);
-        setDecryptDialogError("La passphrase no coincide con la clave privada.");
+        setDecryptDialogError("That passphrase does not match this private key.");
       } finally {
         setIsDecrypting(false);
       }
@@ -154,6 +174,7 @@ export function useCryptoWorkspace() {
 
   return {
     unlockedPrivateKey,
+    openProfileId,
     setUnlockedPrivateKey,
     unlockPassphraseInput,
     setUnlockPassphraseInput,
@@ -174,7 +195,9 @@ export function useCryptoWorkspace() {
     pendingDecryptArmored,
     isDecrypting,
     lockKey,
+    enterProfile,
     handleUnlockKey,
+    decryptWithUnlockedKey,
     handleSignMessage,
     requestDecrypt,
     closeDecryptDialog,
