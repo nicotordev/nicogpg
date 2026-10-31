@@ -69,7 +69,7 @@ export function useKeyCreation() {
         if (parsed.handle) setNewHandle(parsed.handle);
       } catch (error: unknown) {
         console.error("OpenPGP parse error:", error);
-        setParseError("No se pudo leer la clave OpenPGP. Revisa el bloque exportado.");
+        setParseError("Could not read OpenPGP key. Please check the exported block.");
         setParsedKeyInfo(null);
       } finally {
         setIsParsingKey(false);
@@ -79,7 +79,24 @@ export function useKeyCreation() {
 
   // Window Paste Event Listener
   useEffect(() => {
+    function isEditablePasteTarget(target: EventTarget | null): boolean {
+      const element =
+        target instanceof Element
+          ? target
+          : target instanceof Node
+            ? target.parentElement
+            : null;
+      const field = element?.closest("input, textarea, select, [contenteditable]");
+      if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) {
+        return true;
+      }
+      return field instanceof HTMLElement && field.isContentEditable;
+    }
+
     function onWindowPaste(e: ClipboardEvent) {
+      if (isEditablePasteTarget(e.target) || isEditablePasteTarget(document.activeElement)) {
+        return;
+      }
       const pastedData = e.clipboardData?.getData("text");
       if (pastedData) {
         handleIncomingKeyText(pastedData);
@@ -146,7 +163,7 @@ export function useKeyCreation() {
         if (parsed.handle) setNewHandle(parsed.handle);
       } catch (error: unknown) {
         console.error("OpenPGP parse error:", error);
-        setParseError("No se pudo leer la clave OpenPGP. Revisa el bloque exportado.");
+        setParseError("Could not read OpenPGP key. Please check the exported block.");
         setParsedKeyInfo(null);
       } finally {
         setIsParsingKey(false);
@@ -208,7 +225,7 @@ export function useKeyCreation() {
         if (parsedKeyInfo.isPrivateKey) {
           if (!importPassphrase) {
             setParseError(
-              "Ingresa la passphrase de la clave privada para continuar.",
+              "Please enter private key passphrase to continue.",
             );
             return;
           }
@@ -220,7 +237,7 @@ export function useKeyCreation() {
               passphrase: importPassphrase,
             });
           } catch {
-            setParseError("La passphrase no coincide con la clave privada.");
+            setParseError("Passphrase does not match the private key.");
             return;
           }
         }
@@ -251,7 +268,7 @@ export function useKeyCreation() {
       }
     } catch (err: unknown) {
       console.error("Key operation error:", err);
-      callbacks.onError("No se pudo guardar la clave");
+      callbacks.onError("Could not save key.");
     } finally {
       setIsCreatingKey(false);
       setCreationStatusText("");
