@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "nicogpg",
-    short_name: "nicogpg",
+    name: "NicoPGP",
+    short_name: "NicoPGP",
     description:
       "Encrypted OpenPGP key vault. Unlock keys in the browser to encrypt, decrypt, and sign without sending your passphrase to the server.",
     start_url: "/",

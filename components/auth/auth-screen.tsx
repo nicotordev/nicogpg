@@ -31,7 +31,7 @@ export function AuthScreen({
 
         <section className="flex flex-1 flex-col justify-center py-8">
           <div className="mb-8 space-y-2">
-            <p className="text-sm font-semibold tracking-wide text-primary">nicogpg</p>
+            <p className="text-sm font-semibold tracking-wide text-primary">NicoPGP</p>
             <h1 className="font-heading text-3xl font-semibold tracking-tight">{title}</h1>
             {description ? (
               <p className="max-w-sm text-sm leading-6 text-muted-foreground">{description}</p>

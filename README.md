@@ -1,4 +1,4 @@
-# nicogpg
+# NicoPGP
 
 Next.js with Prisma 7.10.0, PostgreSQL, and Better Auth 1.7.7.
 

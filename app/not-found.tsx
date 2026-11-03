@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Page not found",
   description:
-    "This page does not exist in nicogpg. Return to home to select an OpenPGP key.",
+    "This page does not exist in NicoPGP. Return to home to select an OpenPGP key.",
 };
 
 export default function NotFound() {

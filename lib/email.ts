@@ -60,7 +60,7 @@ export async function sendVerificationEmail({
     text,
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#17202a">
-        <p style="font-weight:700;color:#ea580c">nicogpg</p>
+        <p style="font-weight:700;color:#ea580c">NicoPGP</p>
         <h1>${escapeHtml(title)}</h1>
         <p>${escapeHtml(text)}</p>
         ${code}

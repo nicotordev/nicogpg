@@ -1,5 +1,5 @@
-// nicogpg Service Worker - Web Native Offline & App Shell Cache
-const CACHE_NAME = "nicogpg-native-v3";
+// NicoPGP Service Worker - Web Native Offline & App Shell Cache
+const CACHE_NAME = "nicopgp-native-v3";
 
 const PRECACHE_ASSETS = ["/", "/logo.svg", "/manifest.webmanifest"];
 

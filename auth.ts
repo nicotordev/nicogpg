@@ -29,9 +29,9 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       await sendVerificationEmail({
         email: user.email,
-        subject: "Verify your email on nicogpg",
+        subject: "Verify your email on NicoPGP",
         title: "Verify your email",
-        text: "Confirm your email address to activate your account on nicogpg.",
+        text: "Confirm your email address to activate your account on NicoPGP.",
         actionLabel: "Verify email",
         actionUrl: url,
       });
@@ -41,8 +41,8 @@ export const auth = betterAuth({
     emailOTP({
       sendVerificationOTP: async ({ email, otp, type }) => {
         const subject = type === "sign-in"
-          ? "Your nicogpg login code"
-          : "Your nicogpg verification code";
+          ? "Your NicoPGP login code"
+          : "Your NicoPGP verification code";
         await sendVerificationEmail({
           email,
           subject,
@@ -56,15 +56,15 @@ export const auth = betterAuth({
       sendMagicLink: async ({ email, url }) => {
         await sendVerificationEmail({
           email,
-          subject: "Your nicogpg login link",
+          subject: "Your NicoPGP login link",
           title: "Magic login link",
-          text: "Click the button to sign in to nicogpg password-free. It expires in 5 minutes.",
+          text: "Click the button to sign in to NicoPGP password-free. It expires in 5 minutes.",
           actionLabel: "Sign in",
           actionUrl: url,
         });
       },
     }),
-    passkey({ rpName: "nicogpg" }),
+    passkey({ rpName: "NicoPGP" }),
     nextCookies(),
   ],
 });

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: { absolute: "Choose a key · nicogpg" },
+  title: { absolute: "Choose a key · NicoPGP" },
   description:
     "Choose an OpenPGP profile or import a key block or file. Open it to encrypt, decrypt, and sign while the passphrase stays in your browser.",
 };

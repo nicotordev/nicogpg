@@ -34,7 +34,7 @@ export const viewport: Viewport = {
 
 const appTitle = "OpenPGP key vault";
 const appDescription =
-  "nicogpg stores encrypted OpenPGP key profiles. Your passphrase never leaves the browser, where you unlock a key to encrypt, decrypt, and sign.";
+  "NicoPGP stores encrypted OpenPGP key profiles. Your passphrase never leaves the browser, where you unlock a key to encrypt, decrypt, and sign.";
 
 function metadataBaseUrl(): URL {
   const raw = process.env.BETTER_AUTH_URL;
@@ -52,13 +52,13 @@ export const metadata: Metadata = {
   metadataBase: metadataBaseUrl(),
   title: {
     default: appTitle,
-    template: "%s · nicogpg",
+    template: "%s · NicoPGP",
   },
   description: appDescription,
-  applicationName: "nicogpg",
-  authors: [{ name: "nicogpg" }],
-  creator: "nicogpg",
-  keywords: ["OpenPGP", "GPG", "zero-knowledge", "encryption", "nicogpg"],
+  applicationName: "NicoPGP",
+  authors: [{ name: "NicoPGP" }],
+  creator: "NicoPGP",
+  keywords: ["OpenPGP", "GPG", "zero-knowledge", "encryption", "NicoPGP"],
   icons: {
     icon: [{ url: "/logo.svg", type: "image/svg+xml", sizes: "any" }],
     apple: [{ url: "/logo.svg", type: "image/svg+xml", sizes: "any" }],
@@ -66,13 +66,13 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: "nicogpg",
+    siteName: "NicoPGP",
     images: [
       {
         url: "/logo.svg",
         width: 1500,
         height: 1500,
-        alt: "nicogpg",
+        alt: "NicoPGP",
         type: "image/svg+xml",
       },
     ],
@@ -84,7 +84,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "nicogpg",
+    title: "NicoPGP",
   },
   formatDetection: {
     telephone: false,

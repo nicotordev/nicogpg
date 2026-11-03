@@ -5,7 +5,7 @@ import { AuthScreen } from "@/components/auth/auth-screen";
 export const metadata: Metadata = {
   title: "Email verified",
   description:
-    "Your email has been verified. You can now sign in and open your OpenPGP keys in nicogpg.",
+    "Your email has been verified. You can now sign in and open your OpenPGP keys in NicoPGP.",
 };
 
 export default function EmailVerifiedPage() {

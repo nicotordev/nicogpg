@@ -6,7 +6,7 @@ import { RegisterPasskey } from "@/components/auth/register-passkey";
 export const metadata: Metadata = {
   title: "Passkeys",
   description:
-    "Register a passkey to access nicogpg with fingerprint, face, PIN, or security key.",
+    "Register a passkey to access NicoPGP with fingerprint, face, PIN, or security key.",
 };
 
 export default function PasskeysPage() {

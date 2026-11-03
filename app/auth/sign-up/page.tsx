@@ -5,7 +5,7 @@ import { SignUpForm } from "@/components/auth/sign-up-form";
 export const metadata: Metadata = {
   title: "Create account",
   description:
-    "Create a nicogpg account to store encrypted OpenPGP key profiles and use them from your browser.",
+    "Create a NicoPGP account to store encrypted OpenPGP key profiles and use them from your browser.",
 };
 
 export default function SignUpPage() {
