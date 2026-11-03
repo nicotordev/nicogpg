@@ -16,7 +16,7 @@ export function FileDropOverlay({ isDraggingFile }: FileDropOverlayProps) {
         Drop OpenPGP Key File Here
       </h2>
       <p className="mt-2 text-sm text-slate-400 text-center max-w-md">
-        Import your .asc, .gpg, or .key file into your zero-knowledge profile
+        Import your .asc, .pgp, or .key file into your zero-knowledge profile
         library.
       </p>
     </div>

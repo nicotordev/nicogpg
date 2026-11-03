@@ -3,10 +3,10 @@ import { ArrowLeft, MessageCircle, Shield, Trash2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import type { GpgKeyDto } from "@/app/actions/gpg.actions";
+import type { PgpKeyDto } from "@/app/actions/pgp.actions";
 
 interface WorkspaceHeaderProps {
-  selectedKey: GpgKeyDto;
+  selectedKey: PgpKeyDto;
   onDeleteProfile: (e: React.MouseEvent) => void;
   onLeaveProfile: () => void;
 }

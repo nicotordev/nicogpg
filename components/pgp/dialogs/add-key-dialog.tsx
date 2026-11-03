@@ -36,7 +36,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import type { ParsedGpgKey } from "@/lib/gpg-crypto";
+import type { ParsedPgpKey } from "@/lib/pgp-crypto";
 import { useMobileSheet } from "../use-mobile-sheet";
 import { AVATAR_GRADIENTS } from "../types";
 import { cn } from "@/lib/utils";
@@ -58,7 +58,7 @@ interface AddKeyDialogProps {
   onNewAvatarColorChange: (color: string) => void;
   armoredInputText: string;
   onArmoredTextChange: (text: string) => void;
-  parsedKeyInfo: ParsedGpgKey | null;
+  parsedKeyInfo: ParsedPgpKey | null;
   parseError: string | null;
   isParsingKey: boolean;
   importPassphrase: string;
@@ -104,7 +104,7 @@ export function AddKeyDialog({
         {mobile ? (
           <SheetHeader className="space-y-2 px-0 pt-1 text-left">
             <SheetTitle className="flex items-center gap-2 font-heading text-xl font-bold text-white">
-              <Sparkles className="size-5 text-red-500" /> GPG Key Profile Setup
+              <Sparkles className="size-5 text-red-500" /> OpenPGP Key Profile Setup
             </SheetTitle>
             <SheetDescription className="text-xs text-slate-400">
               Generate or import an OpenPGP identity envelope. Passphrases never
@@ -114,7 +114,7 @@ export function AddKeyDialog({
         ) : (
           <DialogHeader className="space-y-2">
             <DialogTitle className="text-xl font-bold font-heading flex items-center gap-2 text-white">
-              <Sparkles className="size-5 text-red-500" /> GPG Key Profile Setup
+              <Sparkles className="size-5 text-red-500" /> OpenPGP Key Profile Setup
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-400">
               Generate or import an OpenPGP identity envelope. Passphrases never
@@ -161,13 +161,13 @@ export function AddKeyDialog({
 
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-slate-300">
-                  GPG Passphrase (Browser Secret)
+                  OpenPGP passphrase (Browser Secret)
                 </Label>
                 <div className="relative">
                   <Input
                     type={showPassphrase ? "text" : "password"}
                     required
-                    placeholder="Enter secret GPG passphrase..."
+                    placeholder="Enter secret OpenPGP passphrase..."
                     value={newPassphrase}
                     onChange={(e) => onNewPassphraseChange(e.target.value)}
                     className="bg-slate-950 border-slate-800 pr-10 text-white placeholder:text-slate-600 focus-visible:ring-red-500/50"

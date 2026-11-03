@@ -8,12 +8,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { GpgKeyDto } from "@/app/actions/gpg.actions";
+import type { PgpKeyDto } from "@/app/actions/pgp.actions";
 import { AVATAR_GRADIENTS } from "../types";
 import { cn } from "@/lib/utils";
 
 interface EditKeyDialogProps {
-  editingKey: GpgKeyDto | null;
+  editingKey: PgpKeyDto | null;
   editHandle: string;
   editAvatarColor: string;
   isUpdatingKey: boolean;
@@ -43,7 +43,7 @@ export function EditKeyDialog({
       <DialogContent className="max-w-[calc(100%-1.5rem)] border-slate-800 bg-slate-900 p-4 text-slate-100 sm:max-w-lg sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-white">
-            Edit GPG profile
+            Edit OpenPGP profile
           </DialogTitle>
           <DialogDescription className="text-xs text-slate-400">
             Update the visible profile name and avatar color. Your key material

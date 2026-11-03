@@ -2,12 +2,12 @@
 
 import { useState, useCallback } from "react";
 import type { PrivateKey } from "openpgp";
-import type { GpgKeyDto } from "@/app/actions/gpg.actions";
+import type { PgpKeyDto } from "@/app/actions/pgp.actions";
 import {
   unlockPrivateKeyInMemory,
   signMessageInMemory,
   decryptMessageInMemory,
-} from "@/lib/gpg-crypto";
+} from "@/lib/pgp-crypto";
 
 export function useCryptoWorkspace() {
   // Volatile in-memory unlocked private key
@@ -49,7 +49,7 @@ export function useCryptoWorkspace() {
 
   // Unlock private key in client memory
   const handleUnlockKey = useCallback(
-    async (selectedKey: GpgKeyDto | null, e?: React.FormEvent) => {
+    async (selectedKey: PgpKeyDto | null, e?: React.FormEvent) => {
       if (e) e.preventDefault();
       if (
         !selectedKey?.encryptedPrivateKey ||
@@ -94,7 +94,7 @@ export function useCryptoWorkspace() {
     }
   }, [unlockedPrivateKey, messageToSign, isSigning]);
 
-  // Request decryption modal for armored PGP message
+  // Request decryption modal for armored OpenPGP message
   const decryptWithUnlockedKey = useCallback(
     async (armoredMessage: string): Promise<string> => {
       if (!unlockedPrivateKey) {
@@ -125,7 +125,7 @@ export function useCryptoWorkspace() {
 
   const handleDecryptPassphrase = useCallback(
     async (
-      selectedKey: GpgKeyDto | null,
+      selectedKey: PgpKeyDto | null,
       event?: React.FormEvent,
       onSuccess?: (plaintext: string, armoredMessage: string) => void,
     ) => {

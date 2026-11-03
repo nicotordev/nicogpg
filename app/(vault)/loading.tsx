@@ -1,4 +1,4 @@
-import { VaultLoading } from "@/components/gpg/vault-loading";
+import { VaultLoading } from "@/components/pgp/vault-loading";
 
 export default function Loading() {
   return <VaultLoading />;

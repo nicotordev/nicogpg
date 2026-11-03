@@ -253,7 +253,7 @@ export async function appendMessageAction(input: {
     if (!conversation) return failure("That chat does not exist.");
 
     if (parsed.data.ownerKeyId) {
-      const owner = await prisma.gpgKey.findFirst({
+      const owner = await prisma.pgpKey.findFirst({
         where: { id: parsed.data.ownerKeyId, userId },
         select: { id: true },
       });

@@ -2,12 +2,12 @@ import { Key, Fingerprint, Unlock, Lock, Copy, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import type { GpgKeyDto } from "@/app/actions/gpg.actions";
+import type { PgpKeyDto } from "@/app/actions/pgp.actions";
 import type { PrivateKey } from "openpgp";
 import { cn } from "@/lib/utils";
 
 interface ProfileOverviewCardProps {
-  selectedKey: GpgKeyDto;
+  selectedKey: PgpKeyDto;
   unlockedPrivateKey: PrivateKey | null;
   copiedId: string | null;
   showMessenger: boolean;
@@ -91,7 +91,7 @@ export function ProfileOverviewCard({
               >
                 <Copy className="size-3.5 mr-1.5" />
                 <span>
-                  {copiedId === "public-key" ? "Copied!" : "Copy GPG Key"}
+                  {copiedId === "public-key" ? "Copied!" : "Copy OpenPGP Key"}
                 </span>
               </Button>
             )}

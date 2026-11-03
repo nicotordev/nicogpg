@@ -5,19 +5,19 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { Session } from "@/app/actions/auth.actions";
 
-interface GpgHeaderProps {
+interface PgpHeaderProps {
   session: Session | null;
   onOpenImportModal: () => void;
   onOpenGenerateModal: () => void;
   onSignOut: () => void;
 }
 
-export function GpgHeader({
+export function PgpHeader({
   session,
   onOpenImportModal,
   onOpenGenerateModal,
   onSignOut,
-}: GpgHeaderProps) {
+}: PgpHeaderProps) {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/6 bg-slate-950/85 px-3 py-3 backdrop-blur-xl sm:px-6 sm:py-4">
       <div className="flex w-full items-center justify-between gap-3">
@@ -28,7 +28,7 @@ export function GpgHeader({
             className="size-8 shrink-0 rounded-xl object-cover sm:size-9"
           />
           <span className="text-lg sm:text-xl font-bold tracking-tight text-white font-heading">
-            nico<span className="text-red-500">gpg</span>
+            Nico<span className="text-red-500">PGP</span>
           </span>
           <Badge
             variant="outline"

@@ -1,4 +1,4 @@
-import type { GpgKeyDto } from "@/app/actions/gpg.actions";
+import type { PgpKeyDto } from "@/app/actions/pgp.actions";
 import type { PrivateKey } from "openpgp";
 import type { ChatMessage, Contact } from "../types";
 import { cn } from "@/lib/utils";
@@ -8,8 +8,8 @@ import { MessengerCard } from "./messenger-card";
 import { SecurityNoticeCard } from "./security-notice-card";
 import { SignMessageCard } from "./sign-message-card";
 
-interface GpgWorkspaceProps {
-  selectedKey: GpgKeyDto;
+interface PgpWorkspaceProps {
+  selectedKey: PgpKeyDto;
   unlockedPrivateKey: PrivateKey | null;
   messageToSign: string;
   signedOutput: string;
@@ -40,7 +40,7 @@ interface GpgWorkspaceProps {
   onSignMessage: () => void;
 }
 
-export function GpgWorkspace({
+export function PgpWorkspace({
   selectedKey,
   unlockedPrivateKey,
   messageToSign,
@@ -70,7 +70,7 @@ export function GpgWorkspace({
   onClearChat,
   onMessageToSignChange,
   onSignMessage,
-}: GpgWorkspaceProps) {
+}: PgpWorkspaceProps) {
   return (
     <div
       className={cn(

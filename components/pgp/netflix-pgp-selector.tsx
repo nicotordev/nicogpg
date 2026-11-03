@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import type { NetflixGpgSelectorProps } from "./types";
+import type { NetflixPgpSelectorProps } from "./types";
 import { FileDropOverlay } from "./file-drop-overlay";
-import { GpgHeader } from "./gpg-header";
+import { PgpHeader } from "./pgp-header";
 import { BottomNav } from "./bottom-nav";
 import { ContactsScreen } from "./contacts-screen";
 import { ProfileSelectorGrid } from "./profile-grid/profile-selector-grid";
-import { GpgWorkspace } from "./workspace/gpg-workspace";
+import { PgpWorkspace } from "./workspace/pgp-workspace";
 import { AddKeyDialog } from "./dialogs/add-key-dialog";
 import { EditKeyDialog } from "./dialogs/edit-key-dialog";
 import { DeleteConfirmDialog } from "./dialogs/delete-confirm-dialog";
@@ -20,7 +20,7 @@ import {
   LeaveProfileDialog,
   ProfilePassphraseDialog,
 } from "./dialogs/profile-session-dialogs";
-import { GpgProvider, useGpgContext } from "./context/gpg-context";
+import { PgpProvider, usePgpContext } from "./context/pgp-context";
 import {
   isSelectedProfileFallbackPaused,
   useSelectedProfileHydrated,
@@ -36,7 +36,7 @@ function viewFromPath(pathname: string): VaultView {
   return "profiles";
 }
 
-function NetflixGpgSelectorContent() {
+function NetflixPgpSelectorContent() {
   const {
     session,
     keysState,
@@ -47,7 +47,7 @@ function NetflixGpgSelectorContent() {
     copyText,
     completeKeySave,
     handleSignOut,
-  } = useGpgContext();
+  } = usePgpContext();
   const pathname = usePathname();
   const router = useRouter();
   const profileKeyId = useSelectedProfileStore((state) => state.profileKeyId);
@@ -194,7 +194,7 @@ function NetflixGpgSelectorContent() {
       <FileDropOverlay isDraggingFile={keyCreationState.isDraggingFile} />
 
       {view === "chat" ? null : (
-      <GpgHeader
+      <PgpHeader
         session={session}
         onOpenImportModal={() => {
           keyCreationState.setModalMode("import");
@@ -293,7 +293,7 @@ function NetflixGpgSelectorContent() {
             }}
           />
         ) : isProfileActive && keysState.selectedKey ? (
-          <GpgWorkspace
+          <PgpWorkspace
             selectedKey={keysState.selectedKey}
             unlockedPrivateKey={cryptoState.unlockedPrivateKey}
             messageToSign={cryptoState.messageToSign}
@@ -548,24 +548,24 @@ function NetflixGpgSelectorContent() {
   );
 }
 
-export function NetflixGpgSelector({
+export function NetflixPgpSelector({
   initialSession,
   initialKeys,
   initialNextCursor,
   initialSelectedKey,
   children,
-}: NetflixGpgSelectorProps & { children?: ReactNode }) {
+}: NetflixPgpSelectorProps & { children?: ReactNode }) {
   return (
-    <GpgProvider
+    <PgpProvider
       initialSession={initialSession}
       initialKeys={initialKeys}
       initialNextCursor={initialNextCursor}
       initialSelectedKey={initialSelectedKey}
     >
-      <NetflixGpgSelectorContent />
+      <NetflixPgpSelectorContent />
       {children}
-    </GpgProvider>
+    </PgpProvider>
   );
 }
 
-export { useGpgContext } from "./context/gpg-context";
+export { usePgpContext } from "./context/pgp-context";

@@ -41,7 +41,7 @@ export function UnlockKeyCard({
             <Input
               type="password"
               required
-              placeholder="Enter GPG Passphrase..."
+              placeholder="Enter OpenPGP passphrase..."
               value={passphraseInput}
               onChange={(e) => onPassphraseChange(e.target.value)}
               className="flex-1 bg-[#080d1c] border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-amber-500/50"

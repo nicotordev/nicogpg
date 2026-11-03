@@ -23,7 +23,7 @@ export function SecurityNoticeCard({ showMessenger }: SecurityNoticeCardProps) {
             </p>
             <p>
               Postgres stores only the encrypted OpenPGP envelope ciphertext. Your
-              GPG passphrase is never sent over the wire, and decryption happens
+              OpenPGP passphrase is never sent over the wire, and decryption happens
               exclusively inside your browser memory.
             </p>
           </div>

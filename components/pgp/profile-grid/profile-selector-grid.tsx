@@ -1,11 +1,11 @@
 import type { RefObject } from "react";
 import { Shield, LoaderCircle, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { GpgKeyDto } from "@/app/actions/gpg.actions";
+import type { PgpKeyDto } from "@/app/actions/pgp.actions";
 import { ProfileCard } from "./profile-card";
 
 interface ProfileSelectorGridProps {
-  keys: GpgKeyDto[];
+  keys: PgpKeyDto[];
   isLoadingMore: boolean;
   observerTarget: RefObject<HTMLDivElement | null>;
   draggingKeyId: string | null;
@@ -13,7 +13,7 @@ interface ProfileSelectorGridProps {
   didDragKeyRef: RefObject<boolean>;
   onSelectKey: (keyId: string) => void;
   onToggleKeyMenu: (keyId: string) => void;
-  onEditKey: (key: GpgKeyDto) => void;
+  onEditKey: (key: PgpKeyDto) => void;
   onMoveKey: (keyId: string, direction: -1 | 1) => void;
   onDeleteKey: (keyId: string, e: React.MouseEvent) => void;
   onOpenAddModal: () => void;
@@ -56,7 +56,7 @@ export function ProfileSelectorGrid({
             <Shield className="mr-1.5 size-3.5" /> Private key vault
           </Badge>
           <h1 className="text-3xl font-black tracking-tight text-white font-heading md:text-5xl">
-            Who&apos;s using GPG?
+            Who&apos;s using OpenPGP?
           </h1>
           <p className="text-slate-400 text-sm md:text-base max-w-lg mx-auto">
             Select an OpenPGP cryptographic profile. Paste a key block or drop a

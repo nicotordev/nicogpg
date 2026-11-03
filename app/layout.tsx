@@ -58,7 +58,7 @@ export const metadata: Metadata = {
   applicationName: "NicoPGP",
   authors: [{ name: "NicoPGP" }],
   creator: "NicoPGP",
-  keywords: ["OpenPGP", "GPG", "zero-knowledge", "encryption", "NicoPGP"],
+  keywords: ["OpenPGP", "zero-knowledge", "encryption", "NicoPGP"],
   icons: {
     icon: [{ url: "/logo.svg", type: "image/svg+xml", sizes: "any" }],
     apple: [{ url: "/logo.svg", type: "image/svg+xml", sizes: "any" }],

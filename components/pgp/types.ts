@@ -1,5 +1,5 @@
 import type { Session } from "@/app/actions/auth.actions";
-import type { GpgKeyDto } from "@/app/actions/gpg.actions";
+import type { PgpKeyDto } from "@/app/actions/pgp.actions";
 
 export const AVATAR_GRADIENTS: Record<string, string> = {
   red: "from-red-600 to-rose-900 text-white shadow-red-900/30",
@@ -12,11 +12,11 @@ export const AVATAR_GRADIENTS: Record<string, string> = {
   indigo: "from-indigo-600 to-slate-900 text-white shadow-indigo-900/30",
 };
 
-export interface NetflixGpgSelectorProps {
+export interface NetflixPgpSelectorProps {
   initialSession: Session | null;
-  initialKeys?: GpgKeyDto[];
+  initialKeys?: PgpKeyDto[];
   initialNextCursor?: string | null;
-  initialSelectedKey?: GpgKeyDto | null;
+  initialSelectedKey?: PgpKeyDto | null;
 }
 
 export type ContactKind = "keyed" | "local" | "self";

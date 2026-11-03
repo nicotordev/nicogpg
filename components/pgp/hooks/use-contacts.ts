@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { GpgKeyDto } from "@/app/actions/gpg.actions";
+import type { PgpKeyDto } from "@/app/actions/pgp.actions";
 import {
   appendMessageAction,
   clearConversationAction,
@@ -12,7 +12,7 @@ import {
   listMessagesAction,
   setMessageFavoriteAction,
 } from "@/app/actions/chat.actions";
-import { parseArmoredGpgKey, encryptMessageForRecipient } from "@/lib/gpg-crypto";
+import { parseArmoredPgpKey, encryptMessageForRecipient } from "@/lib/pgp-crypto";
 import { decryptStorageData } from "@/lib/secure-storage";
 import { contactKind, type ChatMessage, type Contact, type ContactKind } from "../types";
 
@@ -207,7 +207,7 @@ export function useContacts() {
   );
 
   const handleCreateSelfChat = useCallback(
-    async (selectedKey: GpgKeyDto | null, fallbackKey?: GpgKeyDto | null) => {
+    async (selectedKey: PgpKeyDto | null, fallbackKey?: PgpKeyDto | null) => {
       const key = selectedKey ?? fallbackKey;
       if (!key) {
         setContactError("Select a profile identity first.");
@@ -289,7 +289,7 @@ export function useContacts() {
       }
 
       try {
-        const parsed = await parseArmoredGpgKey(keyText);
+        const parsed = await parseArmoredPgpKey(keyText);
         if (parsed.isPrivateKey) {
           setContactError("That is a private key. Paste only the public key.");
           return;
@@ -316,7 +316,7 @@ export function useContacts() {
 
   const handleEncryptMessage = useCallback(
     async (
-      selectedKey: GpgKeyDto | null,
+      selectedKey: PgpKeyDto | null,
       onPendingDecrypt?: (armored: string) => void,
     ) => {
       const contact = contacts.find((item) => item.id === selectedContactId);

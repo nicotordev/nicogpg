@@ -13,7 +13,7 @@ function isUniqueConstraint(error: unknown): boolean {
   );
 }
 
-export interface GpgKeyDto {
+export interface PgpKeyDto {
   id: string;
   handle: string;
   keyId: string;
@@ -28,7 +28,7 @@ export interface GpgKeyDto {
   createdAt: Date | string;
 }
 
-type StoredGpgKey = {
+type StoredPgpKey = {
   id: string;
   handle: string;
   keyId: string;
@@ -43,7 +43,7 @@ type StoredGpgKey = {
   createdAt: Date;
 };
 
-function toGpgKeyDto(key: StoredGpgKey): GpgKeyDto {
+function toPgpKeyDto(key: StoredPgpKey): PgpKeyDto {
   return {
     id: key.id,
     handle: key.handle,
@@ -60,9 +60,9 @@ function toGpgKeyDto(key: StoredGpgKey): GpgKeyDto {
   };
 }
 
-export async function createGpgKeyAction(
+export async function createPgpKeyAction(
   formData: FormData,
-): Promise<{ ok: true; key: GpgKeyDto } | { ok: false; error: string }> {
+): Promise<{ ok: true; key: PgpKeyDto } | { ok: false; error: string }> {
   const session = await getSession();
   if (!session?.user?.id) {
     return { ok: false, error: "Unauthorized" };
@@ -84,17 +84,17 @@ export async function createGpgKeyAction(
       return { ok: false, error: "Incomplete key data" };
     }
 
-    const alreadySaved = await prisma.gpgKey.findFirst({
+    const alreadySaved = await prisma.pgpKey.findFirst({
       where: { userId: session.user.id, fingerprint },
     });
     if (alreadySaved) {
-      return { ok: true, key: toGpgKeyDto(alreadySaved) };
+      return { ok: true, key: toPgpKeyDto(alreadySaved) };
     }
 
-    const existingCount = await prisma.gpgKey.count({
+    const existingCount = await prisma.pgpKey.count({
       where: { userId: session.user.id },
     });
-    const key = await prisma.gpgKey.create({
+    const key = await prisma.pgpKey.create({
       data: {
         userId: session.user.id,
         handle: handle.trim(),
@@ -110,45 +110,45 @@ export async function createGpgKeyAction(
       },
     });
 
-    return { ok: true, key: toGpgKeyDto(key) };
+    return { ok: true, key: toPgpKeyDto(key) };
   } catch (error) {
-    console.error("[gpg.actions] createGpgKeyAction error:", error);
+    console.error("[pgp.actions] createPgpKeyAction error:", error);
     if (isUniqueConstraint(error)) {
-      const saved = await prisma.gpgKey.findFirst({
+      const saved = await prisma.pgpKey.findFirst({
         where: { userId: session.user.id, fingerprint },
       });
-      if (saved) return { ok: true, key: toGpgKeyDto(saved) };
+      if (saved) return { ok: true, key: toPgpKeyDto(saved) };
     }
     return { ok: false, error: "Could not save key" };
   }
 }
 
-export async function getGpgKeyByIdAction(id: string): Promise<GpgKeyDto | null> {
+export async function getPgpKeyByIdAction(id: string): Promise<PgpKeyDto | null> {
   const session = await getSession();
   if (!session?.user?.id || !id) return null;
 
-  const key = await prisma.gpgKey.findFirst({
+  const key = await prisma.pgpKey.findFirst({
     where: { id, userId: session.user.id },
   });
-  return key ? toGpgKeyDto(key) : null;
+  return key ? toPgpKeyDto(key) : null;
 }
 
 /**
- * Fetch paginated GPG keys with infinite scroll support.
+ * Fetch paginated OpenPGP keys with infinite scroll support.
  */
-export async function getGpgKeysAction({
+export async function getPgpKeysAction({
   cursor,
   limit = 8,
 }: {
   cursor?: string;
   limit?: number;
-}): Promise<{ keys: GpgKeyDto[]; nextCursor: string | null; total: number }> {
+}): Promise<{ keys: PgpKeyDto[]; nextCursor: string | null; total: number }> {
   try {
     const session = await getSession();
-    let dbKeys: GpgKeyDto[] = [];
+    let dbKeys: PgpKeyDto[] = [];
 
     if (session?.user?.id) {
-      const dbResult = await prisma.gpgKey.findMany({
+      const dbResult = await prisma.pgpKey.findMany({
         where: { userId: session.user.id },
         orderBy: { createdAt: "desc" },
       });
@@ -171,15 +171,15 @@ export async function getGpgKeysAction({
       total: dbKeys.length,
     };
   } catch (error) {
-    console.error("[gpg.actions] getGpgKeysAction error:", error);
+    console.error("[pgp.actions] getPgpKeysAction error:", error);
     return { keys: [], nextCursor: null, total: 0 };
   }
 }
 
 /**
- * Delete a GPG Key identity.
+ * Delete an OpenPGP key identity.
  */
-export async function deleteGpgKeyAction(
+export async function deletePgpKeyAction(
   id: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
@@ -188,7 +188,7 @@ export async function deleteGpgKeyAction(
       return { success: false, error: "Unauthorized" };
     }
 
-    await prisma.gpgKey.deleteMany({
+    await prisma.pgpKey.deleteMany({
       where: {
         id,
         userId: session.user.id,
@@ -198,15 +198,15 @@ export async function deleteGpgKeyAction(
     revalidatePath("/");
     return { success: true };
   } catch (error: unknown) {
-    console.error("[gpg.actions] deleteGpgKeyAction error:", error);
+    console.error("[pgp.actions] deletePgpKeyAction error:", error);
     return { success: false, error: "Could not delete profile." };
   }
 }
 
-export async function updateGpgKeyAction(
+export async function updatePgpKeyAction(
   id: string,
   data: { handle: string; avatarColor: string },
-): Promise<{ ok: boolean; key?: GpgKeyDto; error?: string }> {
+): Promise<{ ok: boolean; key?: PgpKeyDto; error?: string }> {
   const session = await getSession();
   if (!session?.user?.id) return { ok: false, error: "Unauthorized" };
 
@@ -214,16 +214,16 @@ export async function updateGpgKeyAction(
   if (!handle) return { ok: false, error: "Name cannot be empty" };
 
   try {
-    const result = await prisma.gpgKey.updateMany({
+    const result = await prisma.pgpKey.updateMany({
       where: { id, userId: session.user.id },
       data: { handle, avatarColor: data.avatarColor },
     });
     if (result.count === 0) return { ok: false, error: "Profile not found" };
-    const key = await prisma.gpgKey.findUniqueOrThrow({ where: { id } });
+    const key = await prisma.pgpKey.findUniqueOrThrow({ where: { id } });
     revalidatePath("/");
     return { ok: true, key };
   } catch (error) {
-    console.error("[gpg.actions] updateGpgKeyAction error:", error);
+    console.error("[pgp.actions] updatePgpKeyAction error:", error);
     return { ok: false, error: "Could not update profile" };
   }
 }

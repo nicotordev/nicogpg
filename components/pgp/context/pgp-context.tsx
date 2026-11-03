@@ -10,8 +10,8 @@ import {
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import type { Session } from "@/app/actions/auth.actions";
-import type { GpgKeyDto } from "@/app/actions/gpg.actions";
-import { useGpgKeys } from "../hooks/use-gpg-keys";
+import type { PgpKeyDto } from "@/app/actions/pgp.actions";
+import { usePgpKeys } from "../hooks/use-pgp-keys";
 import { useCryptoWorkspace } from "../hooks/use-crypto-workspace";
 import { useContacts } from "../hooks/use-contacts";
 import { useKeyCreation } from "../hooks/use-key-creation";
@@ -20,11 +20,11 @@ import {
   useSelectedProfileStore,
 } from "../selected-profile-store";
 
-interface GpgContextValue {
+interface PgpContextValue {
   session: Session | null;
 
   // Keys & Management
-  keysState: ReturnType<typeof useGpgKeys>;
+  keysState: ReturnType<typeof usePgpKeys>;
 
   // Volatile Crypto Memory & Tools
   cryptoState: ReturnType<typeof useCryptoWorkspace>;
@@ -38,27 +38,27 @@ interface GpgContextValue {
   // General UI state
   copiedId: string | null;
   copyText: (text: string, id: string) => void;
-  completeKeySave: (key: GpgKeyDto) => void;
+  completeKeySave: (key: PgpKeyDto) => void;
   handleSignOut: () => Promise<void>;
 }
 
-const GpgContext = createContext<GpgContextValue | null>(null);
+const PgpContext = createContext<PgpContextValue | null>(null);
 
-interface GpgProviderProps {
+interface PgpProviderProps {
   children: ReactNode;
   initialSession: Session | null;
-  initialKeys?: GpgKeyDto[];
+  initialKeys?: PgpKeyDto[];
   initialNextCursor?: string | null;
-  initialSelectedKey?: GpgKeyDto | null;
+  initialSelectedKey?: PgpKeyDto | null;
 }
 
-export function GpgProvider({
+export function PgpProvider({
   children,
   initialSession,
   initialKeys,
   initialNextCursor,
   initialSelectedKey,
-}: GpgProviderProps) {
+}: PgpProviderProps) {
   const { data: sessionData } = authClient.useSession();
   const session = (sessionData || initialSession) ?? null;
 
@@ -74,7 +74,7 @@ export function GpgProvider({
     lockKey();
   }, [lockKey]);
 
-  const keysState = useGpgKeys({
+  const keysState = usePgpKeys({
     initialKeys,
     initialNextCursor,
     initialSelectedKey,
@@ -90,7 +90,7 @@ export function GpgProvider({
   }, []);
 
   const completeKeySave = useCallback(
-    (key: GpgKeyDto) => {
+    (key: PgpKeyDto) => {
       keysState.setKeys((prev) => [
         key,
         ...prev.filter((item) => item.id !== key.id),
@@ -113,7 +113,7 @@ export function GpgProvider({
   }, [cryptoState]);
 
   return (
-    <GpgContext.Provider
+    <PgpContext.Provider
       value={{
         session,
         keysState,
@@ -127,14 +127,14 @@ export function GpgProvider({
       }}
     >
       {children}
-    </GpgContext.Provider>
+    </PgpContext.Provider>
   );
 }
 
-export function useGpgContext() {
-  const context = useContext(GpgContext);
+export function usePgpContext() {
+  const context = useContext(PgpContext);
   if (!context) {
-    throw new Error("useGpgContext must be used within a GpgProvider");
+    throw new Error("usePgpContext must be used within a PgpProvider");
   }
   return context;
 }

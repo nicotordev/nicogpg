@@ -22,7 +22,7 @@ const ARMORED_KEY_BLOCK =
   /-----BEGIN PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----[\s\S]*?-----END PGP (?:PUBLIC|PRIVATE) KEY BLOCK-----/;
 
 /**
- * GnuPG prints warnings before the armor block. Keep only the block OpenPGP.js can read.
+ * Key exports can contain warnings before the armor block; keep only the block OpenPGP.js can read.
  */
 export function extractArmoredKeyBlock(raw: string): string {
   const normalized = raw
@@ -34,7 +34,7 @@ export function extractArmoredKeyBlock(raw: string): string {
   return normalized.match(ARMORED_KEY_BLOCK)?.[0]?.trim() ?? normalized;
 }
 
-export interface ClientGpgEnvelope {
+export interface ClientPgpEnvelope {
   handle: string;
   keyId: string;
   fingerprint: string;
@@ -44,7 +44,7 @@ export interface ClientGpgEnvelope {
   kdfParams: string;
 }
 
-export interface ParsedGpgKey {
+export interface ParsedPgpKey {
   handle: string;
   keyId: string;
   fingerprint: string;
@@ -74,9 +74,9 @@ function generateSalt(byteLength = 32): string {
 
 /**
  * Generates an OpenPGP KeyPair in the browser and encrypts the private key
- * using the user's GPG passphrase. The passphrase is NEVER transmitted to the server.
+ * using the user's OpenPGP passphrase. The passphrase is NEVER transmitted to the server.
  */
-export async function generateClientGpgEnvelope({
+export async function generateClientPgpEnvelope({
   handle,
   passphrase,
   keyType = "Ed25519",
@@ -84,7 +84,7 @@ export async function generateClientGpgEnvelope({
   handle: string;
   passphrase: string;
   keyType?: string;
-}): Promise<ClientGpgEnvelope> {
+}): Promise<ClientPgpEnvelope> {
   const isEcc = keyType === "Ed25519" || keyType === "X25519" || keyType === "ECDSA P-384";
 
   const result = await openpgp.generateKey({
@@ -124,9 +124,9 @@ export async function generateClientGpgEnvelope({
 /**
  * Parses an ASCII Armored OpenPGP public or private key string.
  */
-export async function parseArmoredGpgKey(
+export async function parseArmoredPgpKey(
   armoredKey: string,
-): Promise<ParsedGpgKey> {
+): Promise<ParsedPgpKey> {
   let isPrivateKey = false;
   let key: openpgp.Key;
   let encryptedPrivateKeyArmored: string | undefined = undefined;
@@ -153,7 +153,7 @@ export async function parseArmoredGpgKey(
   const userIDs = key.getUserIDs();
 
   // Extract handle name from userID e.g. "Alice <alice@example.com>" -> "Alice"
-  let handle = "Imported GPG Key";
+  let handle = "Imported OpenPGP Key";
   if (userIDs.length > 0 && userIDs[0]) {
     const match = userIDs[0].match(/^([^<]+)/);
     handle = match ? match[1].trim() : userIDs[0].trim();

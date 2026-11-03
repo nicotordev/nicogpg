@@ -1,25 +1,25 @@
 import { Suspense, type ReactNode } from "react";
 import { getSessionAction } from "@/app/actions/auth.actions";
-import { getGpgKeysAction } from "@/app/actions/gpg.actions";
+import { getPgpKeysAction } from "@/app/actions/pgp.actions";
 import { redirectToSignIn } from "@/app/actions/redirect.actions";
-import { NetflixGpgSelector } from "@/components/gpg/netflix-gpg-selector";
-import { VaultLoading } from "@/components/gpg/vault-loading";
+import { NetflixPgpSelector } from "@/components/pgp/netflix-pgp-selector";
+import { VaultLoading } from "@/components/pgp/vault-loading";
 
 export default async function VaultLayout({ children }: { children: ReactNode }) {
   const session = await getSessionAction();
   if (!session) redirectToSignIn();
 
-  const initialData = await getGpgKeysAction({ limit: 8 });
+  const initialData = await getPgpKeysAction({ limit: 8 });
 
   return (
     <Suspense fallback={<VaultLoading />}>
-      <NetflixGpgSelector
+      <NetflixPgpSelector
         initialSession={session}
         initialKeys={initialData.keys}
         initialNextCursor={initialData.nextCursor}
       >
         {children}
-      </NetflixGpgSelector>
+      </NetflixPgpSelector>
     </Suspense>
   );
 }

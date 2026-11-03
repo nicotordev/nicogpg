@@ -18,7 +18,7 @@ export function VaultLoading() {
               className="size-8 shrink-0 animate-pulse rounded-xl object-cover sm:size-9"
             />
             <span className="text-lg sm:text-xl font-bold tracking-tight text-white font-heading">
-              nico<span className="text-red-500">gpg</span>
+              Nico<span className="text-red-500">PGP</span>
             </span>
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-red-800/40 bg-red-950/60 px-2.5 py-0.5 text-xs font-semibold text-red-400">
               <Shield className="size-3" /> Zero-Knowledge Envelope

@@ -34,12 +34,12 @@ export function DeleteConfirmDialog({
             {deleteRequest?.step === 2
               ? "Final confirmation"
               : deleteRequest?.type === "key"
-                ? "Delete GPG profile"
+                ? "Delete OpenPGP profile"
                 : "Delete contact"}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-slate-400">
             {deleteRequest?.step === 2
-              ? `"${deleteRequest.name}" and its GPG key will be permanently deleted. This action cannot be undone.`
+              ? `"${deleteRequest.name}" and its OpenPGP key will be permanently deleted. This action cannot be undone.`
               : deleteRequest?.type === "key"
                 ? `Are you sure you want to delete profile "${deleteRequest.name}"? You will be asked to confirm once more.`
                 : `Are you sure you want to delete contact "${deleteRequest?.name}"?`}

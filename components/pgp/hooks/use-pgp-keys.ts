@@ -2,42 +2,42 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  getGpgKeysAction,
-  getGpgKeyByIdAction,
-  deleteGpgKeyAction,
-  updateGpgKeyAction,
-  type GpgKeyDto,
-} from "@/app/actions/gpg.actions";
+  getPgpKeysAction,
+  getPgpKeyByIdAction,
+  deletePgpKeyAction,
+  updatePgpKeyAction,
+  type PgpKeyDto,
+} from "@/app/actions/pgp.actions";
 import type { DeleteRequest } from "../types";
 import { useSelectedProfileStore } from "../selected-profile-store";
 
-interface UseGpgKeysOptions {
-  initialKeys?: GpgKeyDto[];
+interface UsePgpKeysOptions {
+  initialKeys?: PgpKeyDto[];
   initialNextCursor?: string | null;
-  initialSelectedKey?: GpgKeyDto | null;
-  onProfileSelected?: (profile: GpgKeyDto) => void;
+  initialSelectedKey?: PgpKeyDto | null;
+  onProfileSelected?: (profile: PgpKeyDto) => void;
   onClearProfile?: () => void;
 }
 
-export function useGpgKeys({
+export function usePgpKeys({
   initialKeys,
   initialNextCursor = null,
   initialSelectedKey = null,
   onProfileSelected,
   onClearProfile,
-}: UseGpgKeysOptions = {}) {
+}: UsePgpKeysOptions = {}) {
   const profileKeyId = useSelectedProfileStore((state) => state.profileKeyId);
   // Keys list & pagination state
-  const [keys, setKeys] = useState<GpgKeyDto[]>(initialKeys ?? []);
+  const [keys, setKeys] = useState<PgpKeyDto[]>(initialKeys ?? []);
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor ?? null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Selected Active Profile
-  const [selectedKey, setSelectedKey] = useState<GpgKeyDto | null>(initialSelectedKey ?? null);
+  const [selectedKey, setSelectedKey] = useState<PgpKeyDto | null>(initialSelectedKey ?? null);
 
   // Profile Menu, Edit & Reorder State
   const [openKeyMenuId, setOpenKeyMenuId] = useState<string | null>(null);
-  const [editingKey, setEditingKey] = useState<GpgKeyDto | null>(null);
+  const [editingKey, setEditingKey] = useState<PgpKeyDto | null>(null);
   const [editHandle, setEditHandle] = useState("");
   const [editAvatarColor, setEditAvatarColor] = useState("red");
   const [isUpdatingKey, setIsUpdatingKey] = useState(false);
@@ -78,14 +78,14 @@ export function useGpgKeys({
     if (initialKeys && initialKeys.length > 0) return;
 
     let isMounted = true;
-    getGpgKeysAction({ cursor: undefined, limit: 8 }).then(async (res) => {
+    getPgpKeysAction({ cursor: undefined, limit: 8 }).then(async (res) => {
       if (!isMounted) return;
       setKeys(res.keys);
       setNextCursor(res.nextCursor);
 
       const listed = res.keys.find((key) => key.id === profileKeyId);
       const profile =
-        listed ?? (profileKeyId ? await getGpgKeyByIdAction(profileKeyId) : null);
+        listed ?? (profileKeyId ? await getPgpKeyByIdAction(profileKeyId) : null);
       if (!isMounted || !profile) return;
 
       setSelectedKey(profile);
@@ -105,7 +105,7 @@ export function useGpgKeys({
       return;
     }
     let cancelled = false;
-    void getGpgKeyByIdAction(profileKeyId).then((profile) => {
+    void getPgpKeyByIdAction(profileKeyId).then((profile) => {
       if (cancelled) return;
       if (!profile) {
         if (useSelectedProfileStore.getState().profileKeyId === profileKeyId) {
@@ -125,7 +125,7 @@ export function useGpgKeys({
   const fetchMoreKeys = useCallback(async () => {
     if (!nextCursor || isLoadingMore) return;
     setIsLoadingMore(true);
-    const res = await getGpgKeysAction({ cursor: nextCursor, limit: 8 });
+    const res = await getPgpKeysAction({ cursor: nextCursor, limit: 8 });
     setKeys((prev) => [...prev, ...res.keys]);
     setNextCursor(res.nextCursor);
     setIsLoadingMore(false);
@@ -182,7 +182,7 @@ export function useGpgKeys({
     swapKeys(keyId, direction);
   }
 
-  function openEditKey(key: GpgKeyDto) {
+  function openEditKey(key: PgpKeyDto) {
     setOpenKeyMenuId(null);
     setEditingKey(key);
     setEditHandle(key.handle);
@@ -194,7 +194,7 @@ export function useGpgKeys({
     if (!editingKey || isUpdatingKey) return;
 
     setIsUpdatingKey(true);
-    const result = await updateGpgKeyAction(editingKey.id, {
+    const result = await updatePgpKeyAction(editingKey.id, {
       handle: editHandle,
       avatarColor: editAvatarColor,
     });
@@ -242,7 +242,7 @@ export function useGpgKeys({
     }
 
     if (deleteRequest.type === "key") {
-      const result = await deleteGpgKeyAction(deleteRequest.id);
+      const result = await deletePgpKeyAction(deleteRequest.id);
       if (!result.success) {
         setUiError(result.error ?? "Could not delete profile.");
       } else {

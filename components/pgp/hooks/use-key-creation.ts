@@ -2,15 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  generateClientGpgEnvelope,
+  generateClientPgpEnvelope,
   unlockPrivateKeyInMemory,
-  parseArmoredGpgKey,
-  type ParsedGpgKey,
-} from "@/lib/gpg-crypto";
+  parseArmoredPgpKey,
+  type ParsedPgpKey,
+} from "@/lib/pgp-crypto";
 import {
-  createGpgKeyAction,
-  type GpgKeyDto,
-} from "@/app/actions/gpg.actions";
+  createPgpKeyAction,
+  type PgpKeyDto,
+} from "@/app/actions/pgp.actions";
 
 export function useKeyCreation() {
   // Modal Mode: "generate" | "import"
@@ -28,7 +28,7 @@ export function useKeyCreation() {
 
   // Import Key Form State
   const [armoredInputText, setArmoredInputText] = useState("");
-  const [parsedKeyInfo, setParsedKeyInfo] = useState<ParsedGpgKey | null>(null);
+  const [parsedKeyInfo, setParsedKeyInfo] = useState<ParsedPgpKey | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [isParsingKey, setIsParsingKey] = useState(false);
   const [importPassphrase, setImportPassphrase] = useState("");
@@ -64,7 +64,7 @@ export function useKeyCreation() {
       setIsAddModalOpen(true);
 
       try {
-        const parsed = await parseArmoredGpgKey(cleanText);
+        const parsed = await parseArmoredPgpKey(cleanText);
         setParsedKeyInfo(parsed);
         if (parsed.handle) setNewHandle(parsed.handle);
       } catch (error: unknown) {
@@ -158,7 +158,7 @@ export function useKeyCreation() {
       setIsParsingKey(true);
       setParseError(null);
       try {
-        const parsed = await parseArmoredGpgKey(text);
+        const parsed = await parseArmoredPgpKey(text);
         setParsedKeyInfo(parsed);
         if (parsed.handle) setNewHandle(parsed.handle);
       } catch (error: unknown) {
@@ -177,7 +177,7 @@ export function useKeyCreation() {
   async function handleCreateKey(
     e: React.FormEvent,
     callbacks: {
-      onSuccess: (key: GpgKeyDto) => void;
+      onSuccess: (key: PgpKeyDto) => void;
       onError: (err: string) => void;
     },
   ) {
@@ -190,7 +190,7 @@ export function useKeyCreation() {
         if (!newPassphrase) return;
         setCreationStatusText("Generating OpenPGP key pair in browser...");
 
-        const envelope = await generateClientGpgEnvelope({
+        const envelope = await generateClientPgpEnvelope({
           handle: newHandle.trim(),
           passphrase: newPassphrase,
           keyType: newKeyType,
@@ -211,7 +211,7 @@ export function useKeyCreation() {
         );
         formData.set("salt", envelope.salt);
         formData.set("kdfParams", envelope.kdfParams);
-        const res = await createGpgKeyAction(formData);
+        const res = await createPgpKeyAction(formData);
 
         if (res.ok) {
           resetForm();
@@ -242,7 +242,7 @@ export function useKeyCreation() {
           }
         }
 
-        setCreationStatusText("Registering imported GPG identity envelope...");
+        setCreationStatusText("Registering imported OpenPGP identity envelope...");
 
         const formData = new FormData();
         formData.set("handle", newHandle.trim() || parsedKeyInfo.handle);
@@ -257,7 +257,7 @@ export function useKeyCreation() {
         );
         formData.set("salt", parsedKeyInfo.salt);
         formData.set("kdfParams", parsedKeyInfo.kdfParams);
-        const res = await createGpgKeyAction(formData);
+        const res = await createPgpKeyAction(formData);
 
         if (res.ok) {
           resetForm();

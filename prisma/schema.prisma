@@ -24,7 +24,7 @@ model User {
   accounts      Account[]
 
   passkeys Passkey[]
-  gpgKeys  GpgKey[]
+  pgpKeys  PgpKey[]
   contacts Contact[]
   conversations Conversation[]
 
@@ -99,7 +99,7 @@ model Passkey {
   @@map("passkey")
 }
 
-model GpgKey {
+model PgpKey {
   id                  String   @id @default(cuid())
   handle              String
   keyId               String
@@ -121,7 +121,7 @@ model GpgKey {
   @@unique([userId, fingerprint])
   @@index([userId])
   @@index([keyId])
-  @@map("gpg_key")
+  @@map("pgp_key")
 }
 
 model Contact {
@@ -159,7 +159,7 @@ model Message {
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   ownerKeyId     String?
-  ownerKey       GpgKey?      @relation(fields: [ownerKeyId], references: [id], onDelete: SetNull)
+  ownerKey       PgpKey?      @relation(fields: [ownerKeyId], references: [id], onDelete: SetNull)
   ciphertext     String       @db.Text
   favorite       Boolean      @default(false)
   createdAt      DateTime     @default(now())

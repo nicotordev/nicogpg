@@ -1,10 +1,10 @@
 import type { RefObject } from "react";
 import { MoreVertical, FileText, ArrowLeft, Trash2, Key } from "lucide-react";
-import type { GpgKeyDto } from "@/app/actions/gpg.actions";
+import type { PgpKeyDto } from "@/app/actions/pgp.actions";
 import { cn } from "@/lib/utils";
 
 interface ProfileCardProps {
-  keyItem: GpgKeyDto;
+  keyItem: PgpKeyDto;
   isDragging: boolean;
   isFirst: boolean;
   isLast: boolean;
